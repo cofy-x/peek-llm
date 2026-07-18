@@ -1,0 +1,19 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  self-contained-html:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate self-contained pages
+        run: python3 scripts/check.py
+      - name: Test validator
+        run: python3 -m unittest discover -s tests
