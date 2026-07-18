@@ -10,13 +10,16 @@ Peek LLM is an open-source collection of interactive visual explanations for lar
 
 Every exhibit is a self-contained HTML document:
 
+- the hand-maintained file is both the source and the published artifact, with no separate source or distribution copy;
 - all CSS and JavaScript are inline;
 - images, fonts, data, and runtime libraries are embedded;
-- no CDN, backend, package install, or build step is required;
+- no CDN or backend is required by the core experience;
+- no package manager, build tool, bundler, frontend framework, or generation step is used to author an exhibit;
 - the downloaded file works offline through `file://`;
+- optional network-enhanced features remain clearly identified and preserve the offline core experience;
 - ordinary links to papers and documentation remain allowed.
 
-The repository may contain contributor checks and documentation, but an exhibit itself must remain portable as one file.
+The repository may contain contributor checks and documentation, but those tools do not generate or rewrite exhibits. Each exhibit remains readable, directly editable, and portable as one file.
 
 ## Collections
 
