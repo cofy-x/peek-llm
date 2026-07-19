@@ -10,7 +10,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SCAN_DIRS = (ROOT / "exhibits", ROOT / "templates")
 EXHIBIT_FILENAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.html$")
 
 
@@ -221,10 +220,13 @@ def valid_exhibit_filename(name: str) -> bool:
 
 
 def html_files() -> list[Path]:
-    files = [ROOT / "index.html"]
-    for directory in SCAN_DIRS:
-        files.extend(sorted(directory.glob("*.html")))
+    files = sorted(ROOT.glob("*.html"))
+    files.extend(sorted(ROOT.glob("*/*.html")))
     return [path for path in files if path.is_file()]
+
+
+def is_exhibit(path: Path) -> bool:
+    return path.parent != ROOT and path.parent != ROOT / "templates"
 
 
 def main() -> int:
@@ -236,7 +238,7 @@ def main() -> int:
 
     for path in files:
         errors = validate_text(path.read_text(encoding="utf-8"))
-        if path.parent == ROOT / "exhibits" and not valid_exhibit_filename(path.name):
+        if is_exhibit(path) and not valid_exhibit_filename(path.name):
             errors.append("exhibit filename must use lowercase kebab-case")
         if errors:
             failures += 1

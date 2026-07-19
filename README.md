@@ -23,7 +23,7 @@ The repository may contain contributor checks and documentation, but those tools
 
 ## Collections
 
-The first collection will build an intuitive path through tokenization, embeddings, attention, autoregressive decoding, and KV cache. The initial repository contains the platform contract and page template; the first knowledge exhibit will be developed separately.
+The first collection builds an intuitive path through tokenization, embeddings, attention, autoregressive decoding, and KV cache. Each concept lives in its own directory with an `index.html` entry and one HTML file per exhibit. The first exhibit, [Tokenizer Playground](tokenization/tokenizer-playground.html), is available now; the remaining concepts are in development.
 
 ## Check locally
 

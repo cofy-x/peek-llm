@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Replace with a concise description of this Peek LLM slide exhibit.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
+  <title>Concept Slides — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    /* Design tokens: keep in sync with templates/design-tokens.html.
+       This shell provides the deck mechanics; visual identity lives there. */
+    :root {
+      color-scheme: light;
+      --bg: #f7f4ee;
+      --ink: #17202e;
+      --muted: #5d6b7f;
+      --panel: #ffffff;
+      --line: rgba(23, 32, 46, 0.14);
+      --accent: #0d9488;
+      --accent-ink: #0b6e65;
+      --violet: #6d5ef0;
+      --amber: #b45309;
+      --rose: #d1365c;
+      --green: #15803d;
+      --radius: 22px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+      margin: 0; line-height: 1.55; overflow: hidden;
+      display: grid; grid-template-rows: auto 1fr auto;
+      background: radial-gradient(50rem 26rem at 85% -10%, rgba(13, 148, 136, 0.08), transparent 60%), radial-gradient(44rem 26rem at -8% 100%, rgba(109, 94, 240, 0.07), transparent 60%), var(--bg);
+    }
+
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: 2px; }
+    /* Slide headings receive focus only programmatically (for screen readers). */
+    .slide h1:focus, .slide h2:focus { outline: none; }
+
+    header.top, nav.deck-nav { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 16px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 760; letter-spacing: -0.02em; text-decoration: none; }
+    .brand svg { width: 22px; height: 22px; color: var(--accent); }
+    .label { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: 0.11em; text-transform: uppercase; }
+
+    .dots { display: flex; gap: 8px; align-items: center; }
+    .dot { width: 32px; height: 32px; min-height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; }
+    .dot::after { content: ""; position: absolute; inset: 10px; border: 1px solid var(--line); border-radius: 50%; transition: background 250ms var(--ease), border-color 250ms var(--ease), inset 250ms var(--ease); }
+    .dot[aria-current="true"]::after { background: var(--accent); border-color: var(--accent); inset: 8px; }
+
+    .nav-btn { min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+    .nav-btn:disabled { opacity: 0.35; cursor: default; }
+    .nav-btn.primary { border-color: transparent; background: var(--accent); color: #fff; }
+
+    .deck { position: relative; overflow: hidden; }
+    .slide {
+      position: absolute; inset: 0; overflow-y: auto; padding: 8px 16px 24px;
+      display: grid; align-content: center; justify-items: center;
+      opacity: 0; visibility: hidden; transform: translateX(48px);
+      transition: opacity 450ms var(--ease), transform 450ms var(--ease), visibility 0s linear 450ms;
+    }
+    .slide.before { transform: translateX(-48px); }
+    .slide.active { opacity: 1; visibility: visible; transform: none; transition: opacity 450ms var(--ease), transform 450ms var(--ease); }
+
+    .slide-inner { width: min(920px, 100%); }
+
+    h1 { margin: 0 0 12px; font-size: clamp(42px, 7vw, 74px); line-height: 0.98; letter-spacing: -0.055em; }
+    h1 span, h2 span { color: transparent; background: linear-gradient(100deg, var(--accent), #14b8a6 45%, var(--violet)); background-clip: text; -webkit-background-clip: text; }
+    h2 { margin: 0 0 8px; font-size: clamp(28px, 4.4vw, 40px); letter-spacing: -0.035em; }
+    .signpost { margin: 0 0 20px; color: var(--muted); font-size: 17px; max-width: 620px; }
+
+    .panel { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: 0 20px 60px rgba(23, 32, 46, 0.08); }
+
+    @media (max-width: 760px) {
+      .slide { align-content: start; padding-top: 24px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./index.html" aria-label="Back to the concept index">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><defs><linearGradient id="peekg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#6d5ef0"/></linearGradient></defs><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="url(#peekg)" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="2.4" fill="url(#peekg)" stroke="none"/></svg>
+      Peek LLM · Concept
+    </a>
+    <p class="label">Guided slides · replace with the data label</p>
+  </header>
+
+  <main class="deck" id="deck">
+    <section class="slide" aria-labelledby="s1-title">
+      <div class="slide-inner">
+        <h1 id="s1-title">One concept, <span>one idea per screen.</span></h1>
+        <p class="signpost">Forward-looking signpost: what the learner will see and do on the way — not instructions.</p>
+        <div class="panel">The first interactive moment lives here.</div>
+      </div>
+    </section>
+
+    <section class="slide" aria-labelledby="s2-title">
+      <div class="slide-inner">
+        <h2 id="s2-title">Your turn: <span>try it.</span></h2>
+        <p class="signpost">The primary interaction, one screen of focused attention.</p>
+        <div class="panel"><button id="reset" type="button">Reset</button></div>
+      </div>
+    </section>
+
+    <section class="slide" aria-labelledby="s3-title">
+      <div class="slide-inner">
+        <h2 id="s3-title">Sources</h2>
+        <p class="signpost"><a href="https://example.com/primary-source" rel="noreferrer">Replace with a primary source</a></p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="deck-nav" aria-label="Slide navigation">
+    <button class="nav-btn" id="prev-btn" type="button">← Back</button>
+    <div class="dots" id="dots" role="tablist" aria-label="Slides"></div>
+    <button class="nav-btn primary" id="next-btn" type="button">Next →</button>
+  </nav>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /* ============ Deck controller ============
+         One idea per screen: buttons, dots, ←/→ keys, PageUp/PageDown,
+         Home/End, and touch swipe. URL hash (#n) deep-links a slide. */
+
+      const slides = [...document.querySelectorAll(".slide")];
+      const dotsEl = document.querySelector("#dots");
+      const prevBtn = document.querySelector("#prev-btn");
+      const nextBtn = document.querySelector("#next-btn");
+      let current = 0;
+
+      slides.forEach((_, i) => {
+        const dot = document.createElement("button");
+        dot.className = "dot";
+        dot.type = "button";
+        dot.setAttribute("aria-label", `Go to slide ${i + 1} of ${slides.length}`);
+        dot.addEventListener("click", () => goTo(i));
+        dotsEl.append(dot);
+      });
+
+      // Per-slide lifecycle hooks: enter runs when a slide becomes active,
+      // leave when it is hidden (pause animations, stop timers there).
+      const slideHooks = [];
+
+      function goTo(index, focusHeading = false) {
+        const next = Math.max(0, Math.min(slides.length - 1, index));
+        if (next === current && slides[next].classList.contains("active")) return;
+        const leave = slideHooks[current] && slideHooks[current].leave;
+        if (leave) leave();
+        slides.forEach((s, i) => {
+          s.classList.toggle("active", i === next);
+          s.classList.toggle("before", i < next);
+          s.setAttribute("aria-hidden", String(i !== next));
+        });
+        [...dotsEl.children].forEach((d, i) => d.setAttribute("aria-current", String(i === next)));
+        current = next;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === slides.length - 1;
+        nextBtn.textContent = current === slides.length - 1 ? "Done" : "Next →";
+        history.replaceState(null, "", `#${current + 1}`);
+        const enter = slideHooks[current] && slideHooks[current].enter;
+        if (enter) enter();
+        if (focusHeading) {
+          const h = slides[current].querySelector("h1, h2");
+          if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+        }
+      }
+
+      prevBtn.addEventListener("click", () => goTo(current - 1, true));
+      nextBtn.addEventListener("click", () => goTo(current + 1, true));
+
+      document.addEventListener("keydown", (e) => {
+        if (e.target.closest("textarea, input, select, [contenteditable]")) return;
+        if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); goTo(current + 1, true); }
+        if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); goTo(current - 1, true); }
+        if (e.key === "Home") { e.preventDefault(); goTo(0, true); }
+        if (e.key === "End") { e.preventDefault(); goTo(slides.length - 1, true); }
+      });
+
+      let touchX = null;
+      document.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "touch" && !e.target.closest("textarea, button, a")) touchX = e.clientX;
+      }, { passive: true });
+      document.addEventListener("pointerup", (e) => {
+        if (touchX === null) return;
+        const dx = e.clientX - touchX;
+        touchX = null;
+        if (Math.abs(dx) > 60) goTo(current + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+
+      function init() {
+        const start = Math.max(1, Math.min(slides.length, parseInt(location.hash.slice(1), 10) || 1)) - 1;
+        current = start;
+        slides.forEach((s, i) => {
+          s.classList.toggle("active", i === start);
+          s.classList.toggle("before", i < start);
+          s.setAttribute("aria-hidden", String(i !== start));
+        });
+        [...dotsEl.children].forEach((d, i) => d.setAttribute("aria-current", String(i === start)));
+        prevBtn.disabled = start === 0;
+        nextBtn.disabled = start === slides.length - 1;
+        const enter = slideHooks[start] && slideHooks[start].enter;
+        if (enter) enter();
+      }
+
+      document.querySelector("#reset").addEventListener("click", () => {
+        // Restore every interactive value and visual state.
+      });
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!--
+    If necessary, put each small library or embedded dataset in a separate
+    script element with data-peek-vendor="name@version". Retain its name,
+    exact version, canonical source URL, and complete license text. Do not
+    change library logic; document any mechanical transformation (filtering,
+    subsetting, or resource inlining) next to the vendor block.
+  -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>

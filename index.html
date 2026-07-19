@@ -4,19 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Peek LLM — interactive visual explanations of how large language models work, one self-contained HTML file at a time.">
-  <meta name="theme-color" content="#08111f">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%2308111f'/%3E%3Cpath d='M10 32s8-14 22-14 22 14 22 14-8 14-22 14S10 32 10 32Z' fill='none' stroke='%2358e6d9' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23eef6ff'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#f7f4ee">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
   <title>Peek LLM — See how language models work</title>
   <style>
     :root {
-      color-scheme: dark;
-      --ink: #eef6ff;
-      --muted: #92a5bb;
-      --panel: rgba(13, 27, 45, 0.72);
-      --line: rgba(139, 183, 224, 0.16);
-      --cyan: #58e6d9;
-      --violet: #9b8cff;
-      --amber: #ffc56e;
+      color-scheme: light;
+      --bg: #f7f4ee;
+      --ink: #17202e;
+      --muted: #5d6b7f;
+      --panel: #ffffff;
+      --line: rgba(23, 32, 46, 0.14);
+      --accent: #0d9488;
+      --accent-ink: #0b6e65;
+      --violet: #6d5ef0;
+      --amber: #b45309;
       --radius: 24px;
     }
 
@@ -29,9 +31,9 @@
       min-height: 100vh;
       color: var(--ink);
       background:
-        radial-gradient(circle at var(--x, 68%) var(--y, 18%), rgba(88, 230, 217, 0.14), transparent 25rem),
-        radial-gradient(circle at 18% 72%, rgba(155, 140, 255, 0.11), transparent 28rem),
-        #08111f;
+        radial-gradient(circle at var(--x, 68%) var(--y, 18%), rgba(13, 148, 136, 0.09), transparent 25rem),
+        radial-gradient(circle at 18% 72%, rgba(109, 94, 240, 0.08), transparent 28rem),
+        var(--bg);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.5;
     }
@@ -54,13 +56,12 @@
       place-items: center;
       width: 38px;
       height: 38px;
-      border: 1px solid rgba(88, 230, 217, 0.45);
+      border: 1px solid rgba(13, 148, 136, 0.45);
       border-radius: 12px;
-      background: linear-gradient(145deg, rgba(88, 230, 217, 0.2), rgba(155, 140, 255, 0.13));
-      box-shadow: inset 0 0 18px rgba(88, 230, 217, 0.08);
+      background: linear-gradient(145deg, rgba(13, 148, 136, 0.14), rgba(109, 94, 240, 0.1));
     }
 
-    .mark svg { width: 23px; height: 23px; }
+    .mark svg { width: 23px; height: 23px; color: var(--accent); }
     nav { display: flex; gap: 22px; color: var(--muted); font-size: 14px; }
     nav a { text-decoration: none; }
     nav a:hover, nav a:focus-visible { color: var(--ink); }
@@ -69,10 +70,10 @@
 
     .hero { display: grid; grid-template-columns: 1.08fr 0.92fr; align-items: center; gap: 72px; min-height: 560px; }
 
-    .eyebrow { margin: 0 0 18px; color: var(--cyan); font-size: 13px; font-weight: 750; letter-spacing: 0.15em; text-transform: uppercase; }
+    .eyebrow { margin: 0 0 18px; color: var(--accent-ink); font-size: 13px; font-weight: 750; letter-spacing: 0.15em; text-transform: uppercase; }
 
     h1 { max-width: 760px; margin: 0; font-size: clamp(54px, 8vw, 96px); line-height: 0.94; letter-spacing: -0.065em; }
-    h1 span { color: transparent; background: linear-gradient(100deg, var(--cyan), #b6fff7 42%, var(--violet)); background-clip: text; -webkit-background-clip: text; }
+    h1 span { color: transparent; background: linear-gradient(100deg, var(--accent), #14b8a6 42%, var(--violet)); background-clip: text; -webkit-background-clip: text; }
 
     .lede { max-width: 620px; margin: 28px 0 0; color: var(--muted); font-size: clamp(18px, 2.1vw, 22px); }
 
@@ -85,7 +86,7 @@
       padding: 0 19px;
       border: 1px solid var(--line);
       border-radius: 14px;
-      background: rgba(255,255,255,0.035);
+      background: var(--panel);
       color: var(--ink);
       font: inherit;
       font-weight: 700;
@@ -93,9 +94,9 @@
       cursor: pointer;
     }
 
-    .button.primary { border-color: transparent; background: var(--cyan); color: #07131a; }
+    .button.primary { border-color: transparent; background: var(--accent); color: #fff; }
     .button:hover { transform: translateY(-2px); }
-    .button:focus-visible { outline: 3px solid rgba(88, 230, 217, 0.45); outline-offset: 3px; }
+    .button:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: 3px; }
 
     .stage {
       position: relative;
@@ -103,11 +104,11 @@
       overflow: hidden;
       border: 1px solid var(--line);
       border-radius: 32px;
-      background: linear-gradient(150deg, rgba(18, 38, 61, 0.9), rgba(8, 17, 31, 0.72));
-      box-shadow: 0 40px 100px rgba(0,0,0,0.32), inset 0 1px rgba(255,255,255,0.04);
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(23, 32, 46, 0.1);
     }
 
-    .stage::before { content: ""; position: absolute; inset: 0; opacity: 0.18; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 44px 44px; }
+    .stage::before { content: ""; position: absolute; inset: 0; opacity: 0.5; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 44px 44px; }
     .stage-label { position: absolute; top: 24px; left: 26px; color: var(--muted); font-size: 12px; letter-spacing: 0.11em; text-transform: uppercase; }
 
     .token {
@@ -117,23 +118,23 @@
       place-items: center;
       width: 74px;
       height: 48px;
-      border: 1px solid currentColor;
+      border: 1.5px solid currentColor;
       border-radius: 14px;
-      background: #0d1e31;
+      background: #fdfcf9;
       font: 750 15px ui-monospace, SFMono-Regular, Menlo, monospace;
       transition: transform 500ms cubic-bezier(.2,.8,.2,1), box-shadow 500ms ease;
     }
 
-    .t1 { top: 102px; left: 38px; color: var(--cyan); }
+    .t1 { top: 102px; left: 38px; color: var(--accent); }
     .t2 { top: 191px; left: 38px; color: var(--violet); }
     .t3 { top: 280px; left: 38px; color: var(--amber); }
-    .stage.active .t1 { transform: translate(206px, 89px); box-shadow: 0 0 36px rgba(88,230,217,.28); }
-    .stage.active .t2 { transform: translate(206px, 0); box-shadow: 0 0 36px rgba(155,140,255,.28); }
-    .stage.active .t3 { transform: translate(206px, -89px); box-shadow: 0 0 36px rgba(255,197,110,.24); }
+    .stage.active .t1 { transform: translate(206px, 89px); box-shadow: 0 0 36px rgba(13,148,136,.25); }
+    .stage.active .t2 { transform: translate(206px, 0); box-shadow: 0 0 36px rgba(109,94,240,.22); }
+    .stage.active .t3 { transform: translate(206px, -89px); box-shadow: 0 0 36px rgba(180,83,9,.2); }
 
-    .core { position: absolute; z-index: 1; top: 139px; right: 34px; display: grid; place-items: center; width: 156px; height: 156px; border: 1px solid rgba(88,230,217,.3); border-radius: 50%; background: radial-gradient(circle, rgba(88,230,217,.18), rgba(155,140,255,.08) 48%, transparent 70%); color: var(--ink); font-weight: 800; letter-spacing: -.03em; }
-    .core::before, .core::after { content: ""; position: absolute; border: 1px solid rgba(155,140,255,.22); border-radius: 50%; inset: -22px; }
-    .core::after { inset: -48px; border-color: rgba(88,230,217,.12); }
+    .core { position: absolute; z-index: 1; top: 139px; right: 34px; display: grid; place-items: center; width: 156px; height: 156px; border: 1px solid rgba(13,148,136,.35); border-radius: 50%; background: radial-gradient(circle, rgba(13,148,136,.14), rgba(109,94,240,.08) 48%, transparent 70%); color: var(--ink); font-weight: 800; letter-spacing: -.03em; }
+    .core::before, .core::after { content: ""; position: absolute; border: 1px solid rgba(109,94,240,.2); border-radius: 50%; inset: -22px; }
+    .core::after { inset: -48px; border-color: rgba(13,148,136,.14); }
 
     .stage-note { position: absolute; right: 25px; bottom: 22px; max-width: 220px; margin: 0; color: var(--muted); font-size: 13px; text-align: right; }
 
@@ -141,9 +142,13 @@
     .section h2 { margin: 0; max-width: 700px; font-size: clamp(34px, 5vw, 58px); line-height: 1.02; letter-spacing: -0.045em; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
     .card { min-height: 214px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
-    .card small { color: var(--cyan); font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .card small { color: var(--accent-ink); font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
     .card h3 { margin: 44px 0 9px; font-size: 22px; letter-spacing: -.025em; }
     .card p { margin: 0; color: var(--muted); }
+    a.card { display: block; color: inherit; text-decoration: none; transition: transform 240ms cubic-bezier(.2,.8,.2,1), border-color 240ms ease, box-shadow 240ms ease; }
+    a.card:hover, a.card:focus-visible { transform: translateY(-3px); border-color: rgba(13, 148, 136, 0.5); box-shadow: 0 16px 44px rgba(23, 32, 46, 0.12); }
+    .card.soon { border-style: dashed; background: transparent; }
+    .card.soon small { color: var(--muted); }
 
     footer { display: flex; justify-content: space-between; gap: 24px; padding: 34px 0 50px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 
@@ -178,13 +183,13 @@
     <header>
       <a class="brand" href="#top" aria-label="Peek LLM home">
         <span class="mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M3 12s3.3-5 9-5 9 5 9 5-3.3 5-9 5-9-5-9-5Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.7" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" fill="none"><defs><linearGradient id="peekg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#6d5ef0"/></linearGradient></defs><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="url(#peekg)" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="2.4" fill="url(#peekg)" stroke="none"/></svg>
         </span>
         Peek LLM
       </a>
       <nav aria-label="Primary navigation">
+        <a href="#concepts">Concepts</a>
         <a href="#principles">Principles</a>
-        <a href="README.md">About</a>
         <a href="https://github.com/cofy-x/peek-llm" rel="noreferrer">GitHub</a>
       </nav>
     </header>
@@ -196,7 +201,8 @@
           <h1 id="hero-title">Don’t just read it. <span>Peek inside.</span></h1>
           <p class="lede">See how language models work through focused, interactive visual explanations. No setup. No long video. Just one concept in one HTML file.</p>
           <div class="actions">
-            <button class="button primary" id="peek-button" type="button">Try a tiny peek</button>
+            <a class="button primary" href="tokenization/index.html">First concept: Tokenization</a>
+            <button class="button" id="peek-button" type="button">Try a tiny peek</button>
             <a class="button" href="#principles">Explore the idea</a>
           </div>
         </div>
@@ -208,6 +214,20 @@
           <span class="token t3">Value</span>
           <div class="core">Attention</div>
           <p class="stage-note" id="stage-note">Press the button to move information into focus.</p>
+        </div>
+      </section>
+
+      <section class="section" id="concepts" aria-labelledby="concepts-title">
+        <p class="eyebrow">Concepts</p>
+        <h2 id="concepts-title">The collection so far.</h2>
+        <div class="grid">
+          <a class="card concept" href="tokenization/index.html">
+            <small>Concept 01</small>
+            <h3>Tokenization</h3>
+            <p>Watch the real GPT-2 tokenizer cut text into tokens — as guided slides, a single-screen studio, or a free-scroll playground.</p>
+          </a>
+          <article class="card soon"><small>Concept 02</small><h3>Embeddings</h3><p>Where integer IDs become vectors the model can compute with. In development.</p></article>
+          <article class="card soon"><small>Concept 03</small><h3>Attention</h3><p>How tokens look at each other. Planned.</p></article>
         </div>
       </section>
 
@@ -224,7 +244,7 @@
 
     <footer>
       <span>Peek LLM · An open-source Cofy-X project</span>
-      <span>First exhibits are in development.</span>
+      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · more in development.</span>
     </footer>
   </div>
 

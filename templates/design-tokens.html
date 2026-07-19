@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Peek LLM design tokens: the single source of the shared visual identity — colors, type, chips, buttons, and panels used by every exhibit and shell template.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
+  <title>Design Tokens — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    /* ============================================================
+       PEEK LLM DESIGN TOKENS — copy this :root block and the base
+       body styles into every exhibit and shell. Adapt hue usage,
+       never the base palette. This page doubles as a style guide.
+       ============================================================ */
+    :root {
+      color-scheme: light;
+      --bg: #f7f4ee;
+      --ink: #17202e;
+      --muted: #5d6b7f;
+      --panel: #ffffff;
+      --line: rgba(23, 32, 46, 0.14);
+      --accent: #0d9488;
+      --accent-ink: #0b6e65;
+      --violet: #6d5ef0;
+      --amber: #b45309;
+      --rose: #d1365c;
+      --green: #15803d;
+      --blue: #1d6fd1;
+      --orange: #c25e1a;
+      --pink: #a03dc8;
+      --radius: 22px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0; min-height: 100vh; line-height: 1.55;
+      background:
+        radial-gradient(50rem 26rem at 85% -10%, rgba(13, 148, 136, 0.08), transparent 60%),
+        radial-gradient(44rem 26rem at -8% 100%, rgba(109, 94, 240, 0.07), transparent 60%),
+        var(--bg);
+    }
+
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: 2px; }
+
+    /* Categorical chip hues (colorblind-aware, light-background tuned).
+       Assign by position, never hashed from data: hsl(var(--h) …). */
+    .chip {
+      display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+      min-height: 52px; padding: 5px 13px 6px; border: 1.5px solid hsl(var(--h) 62% 42% / 0.85);
+      border-radius: 12px; background: hsl(var(--h) 85% 94%); color: hsl(var(--h) 60% 26%);
+      font: 700 15.5px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre;
+    }
+    .chip small { font: 600 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: hsl(var(--h) 45% 42%); letter-spacing: 0.04em; }
+
+    .btn { min-height: 44px; padding: 0 20px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+    .btn.primary { border-color: transparent; background: var(--accent); color: #fff; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+
+    .panel { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: 0 20px 60px rgba(23, 32, 46, 0.08); }
+
+    /* ---- style-guide-only styles below this line ---- */
+    .shell { width: min(960px, calc(100% - 32px)); margin: 0 auto; padding: 26px 0 80px; }
+    h1 { margin: 34px 0 8px; font-size: clamp(34px, 5vw, 52px); letter-spacing: -0.05em; }
+    h1 span { color: transparent; background: linear-gradient(100deg, var(--accent), #14b8a6 45%, var(--violet)); background-clip: text; -webkit-background-clip: text; }
+    h2 { margin: 40px 0 12px; font-size: 22px; letter-spacing: -0.02em; }
+    .note { color: var(--muted); max-width: 640px; }
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .swatch { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+    .swatch i { display: block; height: 40px; border-radius: 9px; margin-bottom: 8px; background: var(--c); }
+    .swatch b { display: block; font-size: 13px; }
+    .swatch code { color: var(--muted); font-size: 12px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; color: var(--amber); }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>Peek LLM <span>design tokens.</span></h1>
+    <p class="note">The single source of the shared visual identity. Shell templates (<code>templates/slides.html</code>, <code>templates/scroll.html</code>) and exhibits copy the <code>:root</code> block and base styles from this file. Adapt how hues are used — never the base palette.</p>
+
+    <h2>Base colors</h2>
+    <div class="swatches">
+      <div class="swatch"><i style="--c:#f7f4ee"></i><b>bg</b><code>#f7f4ee</code></div>
+      <div class="swatch"><i style="--c:#17202e"></i><b>ink</b><code>#17202e</code></div>
+      <div class="swatch"><i style="--c:#5d6b7f"></i><b>muted</b><code>#5d6b7f</code></div>
+      <div class="swatch"><i style="--c:#ffffff"></i><b>panel</b><code>#ffffff</code></div>
+      <div class="swatch"><i style="--c:#0d9488"></i><b>accent</b><code>#0d9488</code></div>
+      <div class="swatch"><i style="--c:#0b6e65"></i><b>accent-ink</b><code>#0b6e65</code></div>
+      <div class="swatch"><i style="--c:#6d5ef0"></i><b>violet</b><code>#6d5ef0</code></div>
+      <div class="swatch"><i style="--c:#b45309"></i><b>amber</b><code>#b45309</code></div>
+      <div class="swatch"><i style="--c:#d1365c"></i><b>rose</b><code>#d1365c</code></div>
+      <div class="swatch"><i style="--c:#15803d"></i><b>green</b><code>#15803d</code></div>
+      <div class="swatch"><i style="--c:#1d6fd1"></i><b>blue</b><code>#1d6fd1</code></div>
+      <div class="swatch"><i style="--c:#c25e1a"></i><b>orange</b><code>#c25e1a</code></div>
+      <div class="swatch"><i style="--c:#a03dc8"></i><b>pink</b><code>#a03dc8</code></div>
+    </div>
+
+    <h2>Categorical chip hues</h2>
+    <p class="note">Eight curated hues, assigned by position (<code>[174, 210, 36, 152, 262, 348, 24, 300]</code>) so neighbours always contrast. Never hash colors from data IDs.</p>
+    <div class="row" id="hue-row"></div>
+
+    <h2>Components</h2>
+    <div class="row">
+      <button class="btn primary" type="button">Primary</button>
+      <button class="btn" type="button">Secondary</button>
+      <button class="btn" type="button" disabled>Disabled</button>
+    </div>
+    <div class="panel" style="margin-top:14px;">A <code>.panel</code> — the default surface for interactive areas.</div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+      const HUES = [174, 210, 36, 152, 262, 348, 24, 300];
+      const row = document.querySelector("#hue-row");
+      HUES.forEach((h, i) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.style.setProperty("--h", h);
+        const label = document.createElement("span");
+        label.textContent = "chip";
+        const id = document.createElement("small");
+        id.textContent = `hsl(${h})`;
+        chip.append(label, id);
+        row.append(chip);
+      });
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries on this page. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>
