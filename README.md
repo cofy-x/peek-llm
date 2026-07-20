@@ -23,7 +23,11 @@ The repository may contain contributor checks and documentation, but those tools
 
 ## Collections
 
-The first collection builds an intuitive path through tokenization, embeddings, attention, autoregressive decoding, and KV cache. Each concept lives in its own directory with an `index.html` entry and one HTML file per exhibit. The first exhibit, [Tokenizer Playground](tokenization/tokenizer-playground.html), is available now; the remaining concepts are in development.
+The first collection builds an intuitive path through five concepts — tokenization, embeddings, attention, autoregressive decoding, and KV cache. Each concept lives in its own directory with an `index.html` entry and one HTML file per exhibit.
+
+- [Tokenization](tokenization/index.html) — complete with three exhibits: guided slides, a studio, and a free-scroll playground, all driven by the real GPT-2 merge table.
+- [Embeddings](embeddings/index.html) — opened by [Embedding Studio](embeddings/embedding-studio.html), a 3D workbench over 4,000 real GPT-2 word vectors.
+- Attention, autoregressive decoding, KV cache — in development, in that order.
 
 ## Check locally
 

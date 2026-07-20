@@ -23,7 +23,11 @@ Peek LLM 是一个开源的大模型交互知识可视化项目。它不要求�
 
 ## 初始知识路径
 
-第一组页面将从 Tokenization、Embedding、Attention、Autoregressive Decoding 延伸到 KV Cache。每个概念有独立目录，内含 `index.html` 入口和按展品划分的 HTML 文件。首个展品 [Tokenizer Playground](tokenization/tokenizer-playground.html) 已上线，其余概念仍在开发中。
+第一组页面沿五个概念铺出一条直觉路径：Tokenization、Embeddings、Attention、Autoregressive Decoding、KV Cache。每个概念有独立目录，内含 `index.html` 入口和按展品划分的 HTML 文件。
+
+- [Tokenization](tokenization/index.html) — 已上线三个展品：guided slides、studio 与 free-scroll playground，全部由真实 GPT-2 merge 表驱动。
+- [Embeddings](embeddings/index.html) — 由 [Embedding Studio](embeddings/embedding-studio.html) 开启：基于 4,000 个真实 GPT-2 词向量的 3D 工作台。
+- Attention、Autoregressive Decoding、KV Cache — 按此顺序开发中。
 
 ## 本地检查
 
