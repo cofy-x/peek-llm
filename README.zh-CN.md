@@ -27,7 +27,8 @@ Peek LLM 是一个开源的大模型交互知识可视化项目。它不要求�
 
 - [Tokenization](tokenization/index.html) — 已上线三个展品：guided slides、studio 与 free-scroll playground，全部由真实 GPT-2 merge 表驱动。
 - [Embeddings](embeddings/index.html) — 由 [Embedding Studio](embeddings/embedding-studio.html) 开启：基于 4,000 个真实 GPT-2 词向量的 3D 工作台。
-- Attention、Autoregressive Decoding、KV Cache — 按此顺序开发中。
+- [Attention](attention/index.html) — 由 [Attention Studio](attention/attention-studio.html) 开启：覆盖全部 12 层 × 12 头的真实 GPT-2 注意力图工作台。
+- Autoregressive Decoding、KV Cache — 按此顺序开发中。
 
 ## 本地检查
 

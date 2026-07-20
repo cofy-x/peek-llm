@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Peek LLM concept: embeddings — interactive exhibits on how token IDs become vectors, starting with a 3D studio of real GPT-2 word vectors. Self-contained HTML, works offline.">
+  <meta name="description" content="Peek LLM concept: attention — interactive exhibits on how tokens exchange information, starting with a studio built on real GPT-2 attention maps. Self-contained HTML, works offline.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
-  <title>Embeddings — Peek LLM</title>
+  <title>Attention — Peek LLM</title>
   <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
   <!-- END THIRD-PARTY STYLES -->
   <style>
@@ -75,7 +75,6 @@
     /* ---- concept footer nav ---- */
     .concept-foot { margin-top: 28px; padding: 18px 22px; border: 1px dashed var(--line); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
     .concept-foot b { color: var(--ink); }
-    .concept-foot a { color: var(--accent-ink); }
 
     footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
     footer a { color: var(--muted); }
@@ -96,41 +95,41 @@
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><defs><linearGradient id="peekg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#6d5ef0"/></linearGradient></defs><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="url(#peekg)" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="2.4" fill="url(#peekg)" stroke="none"/></svg>
         Peek LLM
       </a>
-      <p class="crumb">Concept 02 · Embeddings</p>
+      <p class="crumb">Concept 03 · Attention</p>
     </header>
 
     <main>
       <div class="concept-head">
         <div>
-          <h1><span>Embeddings</span></h1>
-          <p class="lede">Token IDs are just integers — the model can't compute with those. Each ID is exchanged for a row of 768 numbers, and suddenly meaning has geometry. Pick a way to see it.</p>
+          <h1><span>Attention</span></h1>
+          <p class="lede">Vectors that never talk to each other can't build meaning. Attention lets every token look at the ones before it — weighted, masked, and in parallel across twelve different habits. Pick a way to see it.</p>
         </div>
         <div class="concept-meta" aria-label="Concept facts">
           <span class="meta-pill">1 exhibit</span>
-          <span class="meta-pill">Real GPT-2 vectors</span>
+          <span class="meta-pill">Real GPT-2 attention maps</span>
           <span class="meta-pill">Offline, single file each</span>
         </div>
       </div>
 
       <ul class="grid">
         <li>
-          <a class="card" href="embedding-studio.html">
-            <span class="tags"><span class="tag kind">Studio</span><span class="tag reco">Start here</span><span class="tag data">Real GPT-2 wte</span></span>
-            <h2>Embedding Studio</h2>
-            <p>A single-screen workbench in 3D: orbit a constellation of 4,000 real word vectors, inspect who lives next to whom, and solve king − man + woman with live vector arithmetic.</p>
-            <span class="foot"><span>Single screen · WebGL with 2D fallback</span><span class="go">→</span></span>
+          <a class="card" href="attention-studio.html">
+            <span class="tags"><span class="tag kind">Studio</span><span class="tag reco">Start here</span><span class="tag data">Real GPT-2 traces</span></span>
+            <h2>Attention Studio</h2>
+            <p>A single-screen workbench over real attention maps: hover the grid where <i>it</i> looks straight back at <i>animal</i>, walk all 12 layers × 12 heads, and break any cell down to Q·K, softmax, and weights.</p>
+            <span class="foot"><span>Single screen · 2D canvas</span><span class="go">→</span></span>
           </a>
         </li>
       </ul>
 
       <div class="concept-foot">
-        <span><b>Next concept · <a href="../attention/index.html">Attention</a>.</b> How tokens look at each other.</span>
-        <span>Concept 03 →</span>
+        <span><b>Next concept · Autoregressive decoding.</b> How the model writes, one token at a time. Planned.</span>
+        <span>Concept 04 →</span>
       </div>
     </main>
 
     <footer>
-      <span>Peek LLM · Embeddings</span>
+      <span>Peek LLM · Attention</span>
       <span><a href="../index.html">Home</a> · <a href="https://github.com/cofy-x/peek-llm" rel="noreferrer">GitHub</a></span>
     </footer>
   </div>

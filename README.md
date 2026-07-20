@@ -27,7 +27,8 @@ The first collection builds an intuitive path through five concepts — tokeniza
 
 - [Tokenization](tokenization/index.html) — complete with three exhibits: guided slides, a studio, and a free-scroll playground, all driven by the real GPT-2 merge table.
 - [Embeddings](embeddings/index.html) — opened by [Embedding Studio](embeddings/embedding-studio.html), a 3D workbench over 4,000 real GPT-2 word vectors.
-- Attention, autoregressive decoding, KV cache — in development, in that order.
+- [Attention](attention/index.html) — opened by [Attention Studio](attention/attention-studio.html), a workbench over real GPT-2 attention maps from all 12 layers × 12 heads.
+- Autoregressive decoding, KV cache — in development, in that order.
 
 ## Check locally
 
