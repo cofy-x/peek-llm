@@ -23,12 +23,13 @@ The repository may contain contributor checks and documentation, but those tools
 
 ## Collections
 
-The first collection builds an intuitive path through five concepts — tokenization, embeddings, attention, autoregressive decoding, and KV cache. Each concept lives in its own directory with an `index.html` entry and one HTML file per exhibit.
+The first collection builds an intuitive path through five concepts — tokenization, embeddings, attention, logits and sampling, and KV cache. Each concept lives in its own directory with an `index.html` entry and one HTML file per exhibit.
 
 - [Tokenization](tokenization/index.html) — complete with three exhibits: guided slides, a studio, and a free-scroll playground, all driven by the real GPT-2 merge table.
 - [Embeddings](embeddings/index.html) — opened by [Embedding Studio](embeddings/embedding-studio.html), a 3D workbench over 4,000 real GPT-2 word vectors.
 - [Attention](attention/index.html) — opened by [Attention Studio](attention/attention-studio.html), a workbench over real GPT-2 attention maps from all 12 layers × 12 heads.
-- Autoregressive decoding, KV cache — in development, in that order.
+- [Logits &amp; Sampling](logits-and-sampling/index.html) — opened by [Sampling Studio](logits-and-sampling/sampling-studio.html), a probability-wheel workbench over real GPT-2 next-token logits with temperature, top-k, and top-p.
+- KV cache — in development.
 
 ## Check locally
 
