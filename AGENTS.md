@@ -16,7 +16,7 @@ Before implementing an exhibit, evaluate which layout shell fits the concept, fo
 - **Scroll** (`templates/scroll.html`) — dense, reference-like content that needs free scrolling and comparison.
 - **Studio** (`templates/studio.html`) — a single-screen workbench (side panels + central stage) for state-rich simulations the learner keeps manipulating; `tokenization/tokenizer-studio.html` is the reference implementation.
 
-All shells share the single warm-paper light visual identity defined in `templates/design-tokens.html`. Templates are the floor (contract skeleton, tokens, mechanics), never the ceiling — design each exhibit freely for its concept. A concept may offer the same content in more than one shell, as `tokenization/` does.
+All shells share the single "technical plate" visual identity defined in `templates/design-tokens.html` (warm paper, hairline rules, serif display type, weights ≤ 600). Templates are the floor (contract skeleton, tokens, mechanics), never the ceiling — design each exhibit freely for its concept. A concept may offer the same content in more than one shell, as `tokenization/` does.
 
 ## Start here
 

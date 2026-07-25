@@ -4,26 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Peek LLM exhibit: a single-screen tokenizer studio with the real GPT-2 tokenizer embedded. Controls on the left, live token stage in the center, inspector on the right — click any token to watch how BPE assembled it. One self-contained HTML file, works offline.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
   <title>Tokenizer Studio — Peek LLM</title>
   <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
   <!-- END THIRD-PARTY STYLES -->
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f4ee;
-      --ink: #17202e;
-      --muted: #5d6b7f;
-      --panel: #ffffff;
-      --line: rgba(23, 32, 46, 0.14);
-      --accent: #0d9488;
-      --accent-ink: #0b6e65;
-      --violet: #6d5ef0;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
       --amber: #b45309;
-      --rose: #d1365c;
-      --green: #15803d;
-      --radius: 20px;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --orange: #c25e1a;
+      --pink: #a05195;
+      --radius: 6px;
       --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--ink);
@@ -38,11 +45,11 @@
     body {
       margin: 0; line-height: 1.55; overflow: hidden;
       display: grid; grid-template-rows: auto 1fr;
-      background: radial-gradient(50rem 26rem at 85% -10%, rgba(13, 148, 136, 0.08), transparent 60%), radial-gradient(44rem 26rem at -8% 100%, rgba(109, 94, 240, 0.07), transparent 60%), var(--bg);
+      background: var(--bg);
     }
 
     a { color: var(--accent-ink); }
-    a:focus-visible, button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: 2px; }
+    a:focus-visible, button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
 
     /* ================= Chrome ================= */
 
@@ -50,9 +57,11 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
       width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line);
     }
-    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; letter-spacing: -0.02em; text-decoration: none; }
-    .brand svg { width: 22px; height: 22px; color: var(--accent); }
-    .label { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: 0.11em; text-transform: uppercase; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+    .head-meta { display: flex; align-items: baseline; gap: 12px; }
     header.top nav { display: flex; gap: 16px; font-size: 13.5px; }
     header.top nav a { color: var(--muted); text-decoration: none; }
     header.top nav a:hover { color: var(--ink); }
@@ -68,24 +77,29 @@
     .rail-left { border-right: 1px solid var(--line); }
     .rail-right { border-left: 1px solid var(--line); }
     .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
-    .pane-label { display: flex; align-items: center; margin: 0 0 12px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .pane-label {
+      display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px;
+      background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line);
+      font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink);
+    }
     .pane-label .dot-live { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--accent); }
 
     /* ================= Left: controls ================= */
 
     textarea {
       width: 100%; min-height: 84px; padding: 12px 14px; resize: vertical;
-      border: 1px solid var(--line); border-radius: 12px;
-      background: #fdfcf9; color: var(--ink);
-      font: 600 16px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      border: 1px solid var(--line); border-radius: 3px;
+      background: var(--panel); color: var(--ink);
+      font: 500 15px/1.5 var(--font-mono);
       caret-color: var(--accent);
     }
     .presets { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
     .preset {
-      min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px;
-      background: var(--panel); color: var(--muted); font: 600 12.5px Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer;
+      min-height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 3px;
+      background: var(--panel); color: var(--ink); font: 600 12.5px Inter, ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: 0.09em; text-transform: uppercase; cursor: pointer;
     }
-    .preset:hover, .preset:focus-visible { color: var(--ink); border-color: rgba(13, 148, 136, 0.5); }
+    .preset:hover, .preset:focus-visible { border-color: var(--ink); }
     .hint { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
     .hint b { color: var(--accent-ink); }
 
@@ -93,49 +107,67 @@
 
     .stage { display: grid; grid-template-rows: minmax(0, 38%) minmax(0, 1fr); overflow: hidden; padding: 16px 24px 20px; }
     .stage section { min-height: 0; }
-    .stream-pane { overflow-y: auto; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-    .assembly { position: relative; overflow-y: auto; padding-top: 14px; }
+    .stage .frame { padding: 14px 16px 16px; }
+
+    /* Corner-bracket frame for the permanent stage. */
+    .frame {
+      position: relative; border: 1px solid var(--line); background:
+        linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px,
+        var(--panel);
+      background-repeat: no-repeat;
+    }
+
+    .stream-pane { overflow-y: auto; padding-bottom: 14px; }
+    .assembly { position: relative; overflow-y: auto; }
     .assembly-empty { display: grid; place-items: center; height: 100%; color: var(--muted); text-align: center; padding: 20px; }
     .assembly-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-    .assembly-head .title { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
+    .assembly-head .title { font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
     .assembly-head .title code { color: var(--accent-ink); }
-    .replay { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .replay { min-height: 40px; padding: 0 18px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; cursor: pointer; }
+    .replay:hover { border-color: var(--ink); }
 
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 2px; list-style: none; }
     .chip {
       display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
-      min-height: 52px; padding: 5px 13px 6px; border: 1.5px solid hsl(var(--h) 62% 42% / 0.85);
-      border-radius: 12px; background: hsl(var(--h) 85% 94%); color: hsl(var(--h) 60% 26%);
-      font: 700 15.5px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; cursor: pointer;
+      min-height: 52px; padding: 5px 13px 6px; border: 1px solid hsl(var(--h) 40% 38% / 0.8);
+      border-radius: 4px; background: hsl(var(--h) 45% 93%); color: hsl(var(--h) 45% 24%);
+      font: 600 15px var(--font-mono); white-space: pre; cursor: pointer;
       animation: pop 420ms var(--ease) both; animation-delay: calc(var(--i) * 26ms);
     }
-    .chip small { font: 600 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: hsl(var(--h) 45% 42%); letter-spacing: 0.04em; }
-    .chip:hover, .chip:focus-visible { background: hsl(var(--h) 85% 89%); transform: translateY(-2px); }
+    .chip small { font: 500 10px var(--font-mono); color: hsl(var(--h) 30% 38%); letter-spacing: 0.06em; }
+    .chip:hover, .chip:focus-visible { background: hsl(var(--h) 45% 89%); transform: translateY(-2px); }
     .chip.hex { border-style: dashed; }
-    .chip.sel { outline: 3px solid hsl(var(--h) 62% 42% / 0.5); outline-offset: 2px; }
+    .chip.sel { outline: 2px solid hsl(var(--h) 40% 38% / 0.55); outline-offset: 2px; }
     @keyframes pop { 0% { opacity: 0; transform: translateY(10px) scale(0.92); } 100% { opacity: 1; transform: none; } }
     @keyframes grow { 0% { opacity: 0; transform: scale(0.6); } 100% { opacity: 1; transform: none; } }
 
     .assembly { position: relative; overflow-y: auto; }
     .assembly-empty { display: grid; place-items: center; height: 100%; color: var(--muted); text-align: center; padding: 20px; }
     .assembly-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-    .assembly-head .title { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
+    .assembly-head .title { font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
     .assembly-head .title code { color: var(--accent-ink); }
-    .replay { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .replay { min-height: 40px; padding: 0 18px; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--panel); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; cursor: pointer; }
 
     /* Merge tree: centered org-chart connectors (parent stub, horizontal
        bar, one stub per child). */
     .tree { display: flex; justify-content: center; padding: 8px 6px 16px; }
     .node { display: flex; flex-direction: column; align-items: center; }
     .node .tok {
-      padding: 5px 12px; border: 1.5px solid hsl(var(--h) 62% 42% / 0.85); border-radius: 11px;
-      background: hsl(var(--h) 85% 94%); color: hsl(var(--h) 60% 26%);
-      font: 700 15px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre;
+      padding: 5px 12px; border: 1px solid hsl(var(--h) 40% 38% / 0.8); border-radius: 4px;
+      background: hsl(var(--h) 45% 93%); color: hsl(var(--h) 45% 24%);
+      font: 600 15px var(--font-mono); white-space: pre;
       animation: grow 380ms var(--ease) both; animation-delay: var(--d);
     }
-    .node .tok.leaf { border-style: dashed; background: #fdfcf9; color: var(--muted); }
+    .node .tok.leaf { border-style: dashed; background: var(--panel); color: var(--muted); }
     .node .link { width: 2px; height: 12px; background: var(--line); animation: grow 300ms var(--ease) both; animation-delay: var(--d); }
-    .node .merge-label { font: 600 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); animation: grow 300ms var(--ease) both; animation-delay: var(--d); }
+    .node .merge-label { font: 600 10.5px var(--font-mono); color: var(--muted); animation: grow 300ms var(--ease) both; animation-delay: var(--d); }
     .kids { display: flex; align-items: flex-start; position: relative; animation: grow 300ms var(--ease) both; animation-delay: var(--d); }
     .kid { flex: 0 1 auto; display: flex; flex-direction: column; align-items: center; padding: 0 8px; position: relative; }
     /* each child column draws its own horizontal segment at stub height:
@@ -153,16 +185,16 @@
     .inspector > * + * { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
     .inspector > *:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
     .stat-row { display: flex; gap: 20px; }
-    .stat b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .stat b { display: block; font-family: var(--font-mono); font-size: 30px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.05; font-variant-numeric: tabular-nums; }
     .stat.tok b { color: var(--accent-ink); }
-    .stat span { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .stat span { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; }
 
     .window .scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
-    .window .bar { height: 11px; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: #f0ede6; }
-    .window .fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--violet)); transition: width 500ms var(--ease); }
-    .window.over .fill { background: linear-gradient(90deg, var(--amber), var(--rose)); }
+    .window .bar { height: 11px; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: rgba(46, 43, 37, 0.06); }
+    .window .fill { height: 100%; width: 0%; background: var(--accent); transition: width 500ms var(--ease); }
+    .window.over .fill { background: var(--rose); }
 
-    .sel-card .big { font: 800 24px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -0.02em; }
+    .sel-card .big { font: 600 24px var(--font-mono); letter-spacing: -0.01em; }
     .sel-card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 12px 0 0; font-size: 13.5px; }
     .sel-card dt { color: var(--muted); }
     .sel-card dd { margin: 0; font-variant-numeric: tabular-nums; }
@@ -190,10 +222,13 @@
 <body>
   <header class="top">
     <a class="brand" href="./index.html" aria-label="Back to the Tokenization concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><defs><linearGradient id="peekg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#6d5ef0"/></linearGradient></defs><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="url(#peekg)" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="2.4" fill="url(#peekg)" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
       Peek LLM · Tokenization
     </a>
-    <p class="label">Studio · GPT-2 r50k merge subset</p>
+    <div class="head-meta">
+      <p class="label">Studio · GPT-2 r50k merge subset</p>
+      <p class="fig-no">Fig. 1</p>
+    </div>
     <nav aria-label="Exhibit navigation">
       <a href="tokenizer-slides.html">Slides</a>
       <a href="tokenizer-playground.html">Playground</a>
@@ -214,7 +249,7 @@
         <h2 class="pane-label" id="stream-title">Token stream</h2>
         <ul class="chips" id="chips" aria-label="Token sequence"></ul>
       </section>
-      <section class="assembly" aria-labelledby="assembly-title">
+      <section class="assembly frame" aria-labelledby="assembly-title">
         <div class="assembly-empty" id="assembly-empty">
           <p>The assembly line is idle.<br>Pick a token above to watch how BPE built it, merge by merge.</p>
         </div>
@@ -509,7 +544,7 @@
         treeEl.append(renderTree(tree, tree.height, i));
         selCard.hidden = false;
         selText.textContent = visibleText(t);
-        selText.style.color = `hsl(${hueAt(i)} 60% 26%)`;
+        selText.style.color = `hsl(${hueAt(i)} 45% 24%)`;
         selId.textContent = t.id;
         selBytes.textContent = t.bytes;
         selRank.textContent = t.rank === null ? "— (single byte)" : `#${t.rank}`;

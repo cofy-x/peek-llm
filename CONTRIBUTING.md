@@ -42,7 +42,9 @@ Exhibits teach through images, motion, and play — text is only a signpost.
 
 ## Layout shells and visual identity
 
-Peek LLM has one visual identity — the warm-paper light theme whose single source of truth is `templates/design-tokens.html` — and layout shells that share it. Do not fork the color system per exhibit; adapt hue usage, never the base palette.
+Peek LLM has one visual identity — a "technical plate" language whose single source of truth is `templates/design-tokens.html` — and layout shells that share it. Do not fork the color system per exhibit; adapt hue usage, never the base palette.
+
+The identity in brief: warm light paper, hairline rules instead of shadows, corner-bracket frames for stages and instrument readouts, small uppercase letterspaced labels, serif type (`--font-serif`) reserved for display headings and `Fig.`-style captions, and monospace tabular numerals for data. Keep font weights at 600 or below — hierarchy comes from family, size, color, and spacing, not from stacking heavier weights. `templates/design-tokens.html` doubles as the living style guide; consult it before inventing a new component.
 
 Templates are the floor, not the ceiling: they provide the contract skeleton, design tokens, and reusable mechanics (the slides deck controller, scroll reveal). They do not prescribe the exhibit's design — compose the experience freely for the concept, and treat the exhibits in `tokenization/` as the quality bar.
 

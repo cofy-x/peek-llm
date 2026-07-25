@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Embedding Studio: orbit a 3D constellation of real GPT-2 word vectors, inspect nearest neighbors by cosine similarity, and solve word analogies with live vector arithmetic.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23f7f4ee'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%230d9488' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%230d9488'/%3E%3Crect x='22' y='22' width='20' height='20' rx='6' fill='%236d5ef0' fill-opacity='0.35'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
   <title>Embedding Studio — Peek LLM</title>
   <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
   <!-- END THIRD-PARTY STYLES -->
@@ -12,19 +12,26 @@
     /* Design tokens: keep in sync with templates/design-tokens.html. */
     :root {
       color-scheme: light;
-      --bg: #f7f4ee;
-      --ink: #17202e;
-      --muted: #5d6b7f;
-      --panel: #ffffff;
-      --line: rgba(23, 32, 46, 0.14);
-      --accent: #0d9488;
-      --accent-ink: #0b6e65;
-      --violet: #6d5ef0;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
       --amber: #b45309;
-      --rose: #d1365c;
-      --green: #15803d;
-      --radius: 20px;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --orange: #c25e1a;
+      --pink: #a05195;
+      --radius: 6px;
       --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--ink);
@@ -39,11 +46,11 @@
     body {
       margin: 0; line-height: 1.55; overflow: hidden;
       display: grid; grid-template-rows: auto 1fr;
-      background: radial-gradient(50rem 26rem at 85% -10%, rgba(13, 148, 136, 0.08), transparent 60%), radial-gradient(44rem 26rem at -8% 100%, rgba(109, 94, 240, 0.07), transparent 60%), var(--bg);
+      background: var(--bg);
     }
 
     a { color: var(--accent-ink); }
-    a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: 2px; }
+    a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
 
     /* ================= Chrome ================= */
 
@@ -51,9 +58,10 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
       width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line);
     }
-    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; letter-spacing: -0.02em; text-decoration: none; }
-    .brand svg { width: 22px; height: 22px; color: var(--accent); }
-    .label { margin: 0; color: var(--muted); font-size: 12px; letter-spacing: 0.11em; text-transform: uppercase; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
 
     /* ================= Workbench grid ================= */
 
@@ -66,28 +74,53 @@
     .rail-left { border-right: 1px solid var(--line); }
     .rail-right { border-left: 1px solid var(--line); }
     .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
-    .pane-label { display: flex; align-items: center; margin: 0 0 12px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .pane-label {
+      display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px;
+      background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line);
+      font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink);
+    }
 
     .stage { display: grid; overflow: hidden; padding: 0; position: relative; }
+    .stage.frame { padding: 14px 16px 16px; }
 
-    button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
-    button.primary { border-color: transparent; background: var(--accent); color: #fff; }
+    /* Corner-bracket frame for the permanent stage. */
+    .frame {
+      position: relative; border: 1px solid var(--line); background:
+        linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px,
+        linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px,
+        var(--panel);
+      background-repeat: no-repeat;
+    }
+
+    button {
+      min-height: 40px; padding: 0 18px; border: 1px solid var(--line-strong); border-radius: 3px;
+      background: transparent; color: var(--ink); font: 600 12.5px/1 inherit; font-family: inherit;
+      letter-spacing: 0.09em; text-transform: uppercase; cursor: pointer;
+    }
+    button:hover { border-color: var(--ink); }
+    button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
     button:disabled { opacity: 0.4; cursor: default; }
 
-    input[type="text"] { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fdfcf9; color: var(--ink); font: 600 15px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; caret-color: var(--accent); }
+    input[type="text"] { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--ink); font: 600 15px/1.4 var(--font-mono); caret-color: var(--accent); }
 
     .hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
-    .hint b { color: var(--accent-ink); }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
 
     /* ================= Left: controls ================= */
 
     .find-row { display: flex; gap: 8px; }
     .find-row input { flex: 1; min-width: 0; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .chip { min-height: 36px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .chip { min-height: 36px; padding: 0 12px; border-radius: 4px; }
     .analogy-grid { display: grid; grid-template-columns: 1fr; gap: 6px; }
     .analogy-row { display: flex; align-items: center; gap: 8px; }
-    .analogy-row .op { width: 14px; flex: none; text-align: center; font-weight: 800; color: var(--muted); }
+    .analogy-row .op { width: 14px; flex: none; text-align: center; font-weight: 600; color: var(--muted); }
     .btn-col { display: grid; gap: 8px; margin-top: 4px; }
     .btn-col button { width: 100%; }
     .view-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
@@ -98,59 +131,59 @@
 
     #gl, #flat { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
     #gl.dragging, #flat.dragging { cursor: grabbing; }
-    #gl:focus-visible, #flat:focus-visible { outline: 3px solid rgba(13, 148, 136, 0.4); outline-offset: -3px; }
+    #gl:focus-visible, #flat:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: -2px; }
 
     .stage-ui { position: absolute; inset: 0; pointer-events: none; }
     .stage-ui > * { pointer-events: none; }
 
     .badge {
       position: absolute; top: 12px; right: 12px; max-width: 46%;
-      padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px;
-      background: rgba(247, 244, 238, 0.86); color: var(--muted); font-size: 11.5px; font-weight: 600; text-align: right;
+      padding: 6px 10px; border: 1px solid var(--line); border-radius: 3px;
+      background: rgba(239, 236, 228, 0.86); color: var(--muted); font-size: 11.5px; font-weight: 600; text-align: right;
     }
     .stage-hint {
       position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
-      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line);
-      background: rgba(247, 244, 238, 0.9); color: var(--muted); font-size: 12.5px; white-space: nowrap;
+      padding: 8px 14px; border-radius: 3px; border: 1px solid var(--line);
+      background: rgba(239, 236, 228, 0.9); color: var(--muted); font-size: 12.5px; white-space: nowrap;
       transition: opacity 0.6s var(--ease);
     }
     .legend {
       position: absolute; left: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 4px;
       font-size: 12px; color: var(--muted);
     }
-    .legend span { display: inline-flex; align-items: center; gap: 7px; background: rgba(247, 244, 238, 0.85); border-radius: 999px; padding: 2px 9px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; background: rgba(239, 236, 228, 0.85); border-radius: 3px; padding: 2px 9px; }
     .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
     .lbl {
       position: absolute; top: 0; left: 0; transform: translate(-50%, -140%);
-      padding: 1px 7px; border-radius: 8px; background: rgba(23, 32, 46, 0.82); color: #f7f4ee;
-      font: 600 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; will-change: transform;
+      padding: 1px 7px; border-radius: 3px; background: rgba(46, 43, 37, 0.82); color: #efece4;
+      font: 600 12px/1.6 var(--font-mono); white-space: nowrap; will-change: transform;
     }
     #tooltip {
       position: absolute; top: 0; left: 0; transform: translate(-50%, -150%);
-      padding: 3px 9px; border-radius: 9px; background: var(--ink); color: #f7f4ee;
-      font: 600 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; z-index: 3;
+      padding: 3px 9px; border-radius: 3px; background: var(--ink); color: #efece4;
+      font: 600 12.5px/1.5 var(--font-mono); white-space: nowrap; z-index: 3;
     }
-    #tooltip small { color: rgba(247, 244, 238, 0.72); font-weight: 600; }
+    #tooltip small { color: rgba(239, 236, 228, 0.72); font-weight: 600; }
 
     /* ================= Right: inspector ================= */
 
     .word-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-    .word-head h3 { margin: 0; font: 800 24px/1.15 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -0.02em; }
+    .word-head h3 { margin: 0; font: 600 24px/1.15 var(--font-mono); letter-spacing: -0.02em; }
     .word-head .tid { color: var(--muted); font-size: 12.5px; }
     .strip { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; margin-top: 10px; }
-    .strip i { aspect-ratio: 1; border-radius: 2px; background: #eee; }
+    .strip i { aspect-ratio: 1; border-radius: 2px; background: rgba(46, 43, 37, 0.08); }
     .strip-cap { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); }
 
     ol.neighbors, ol.results { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
     ol.neighbors li, ol.results li { display: grid; grid-template-columns: 92px 1fr 44px; align-items: center; gap: 8px; font-size: 13px; }
-    ol.neighbors button.word-link, ol.results button.word-link { all: unset; cursor: pointer; font: 700 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); min-height: 28px; }
+    ol.neighbors button.word-link, ol.results button.word-link { all: unset; cursor: pointer; font: 600 13px/1.4 var(--font-mono); color: var(--ink); min-height: 28px; }
     ol.neighbors button.word-link:hover, ol.results button.word-link:hover { color: var(--accent-ink); }
-    .bar { height: 7px; border-radius: 99px; background: rgba(23, 32, 46, 0.08); overflow: hidden; }
-    .bar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
-    .val { font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); text-align: right; }
+    .bar { height: 7px; border-radius: 3px; background: rgba(46, 43, 37, 0.08); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+    .val { font: 600 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
 
-    .formula { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fdfcf9; overflow-x: auto; }
+    .formula { margin: 4px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); overflow-x: auto; }
     .formula math { font-size: 15px; }
     .explainer { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
     .explainer li { padding-left: 14px; position: relative; }
@@ -178,10 +211,11 @@
 <body>
   <header class="top">
     <a class="brand" href="./index.html" aria-label="Back to the embeddings concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><defs><linearGradient id="peekg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d9488"/><stop offset="1" stop-color="#6d5ef0"/></linearGradient></defs><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="url(#peekg)" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="2.4" fill="url(#peekg)" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
       Peek LLM · Embeddings
     </a>
     <p class="label">Studio · Model-derived GPT-2 data</p>
+    <p class="fig-no">Fig. 1</p>
   </header>
 
   <div class="workbench">
@@ -235,7 +269,7 @@
     </aside>
 
     <!-- Center: the permanent stage — the 3D embedding space lives here. -->
-    <div class="stage">
+    <div class="stage frame">
       <canvas id="gl" tabindex="0" role="img" aria-label="Interactive 3D map of 4,000 word vectors from GPT-2. Drag to orbit, click a point to select a word."></canvas>
       <canvas id="flat" tabindex="0" role="img" aria-label="Interactive 3D map of 4,000 word vectors from GPT-2, drawn as a flat projection. Drag to orbit, click a point to select a word." hidden></canvas>
       <div class="stage-ui" aria-hidden="true">
@@ -442,13 +476,13 @@
       /* ============ Colors, sizes, lines ============
          One shared palette drives both renderers (WebGL and 2D fallback). */
 
-      const INK = [23 / 255, 32 / 255, 46 / 255];
-      const TEAL = [13 / 255, 148 / 255, 136 / 255];
-      const VIOLET = [109 / 255, 94 / 255, 240 / 255];
+      const INK = [46 / 255, 43 / 255, 37 / 255];
+      const BRASS = [161 / 255, 100 / 255, 47 / 255];
+      const VIOLET = [111 / 255, 99 / 255, 184 / 255];
       const AMBER = [180 / 255, 83 / 255, 9 / 255];
-      const ROSE = [209 / 255, 54 / 255, 92 / 255];
-      const GREEN = [21 / 255, 128 / 255, 61 / 255];
-      const BGC = [247 / 255, 244 / 255, 238 / 255];
+      const ROSE = [176 / 255, 58 / 255, 82 / 255];
+      const GREEN = [74 / 255, 124 / 255, 67 / 255];
+      const BGC = [239 / 255, 236 / 255, 228 / 255];
 
       const MAXSEG = 48;
       const linePos = new Float32Array(MAXSEG * 2 * 3);
@@ -502,9 +536,9 @@
         }
         if (sel >= 0) {
           for (const nb of neighbors) {
-            putColor(nb.i, TEAL, 0.55 + 0.45 * nb.s);
+            putColor(nb.i, BRASS, 0.55 + 0.45 * nb.s);
             sizeBuf[nb.i] = 0.017;
-            seg(point3(sel), point3(nb.i), TEAL, 0.18 + 0.3 * nb.s);
+            seg(point3(sel), point3(nb.i), BRASS, 0.18 + 0.3 * nb.s);
           }
           putColor(sel, VIOLET, 1);
           sizeBuf[sel] = 0.024;
@@ -725,7 +759,7 @@
         if (analogy) {
           items.push([VIOLET, `${WORDS[analogy.a].trim()} (a)`], [AMBER, `${WORDS[analogy.b].trim()} (b)`], [GREEN, `${WORDS[analogy.c].trim()} (c)`], [ROSE, `${WORDS[analogy.top].trim()} ≈ result`]);
         } else if (sel >= 0) {
-          items.push([VIOLET, `${WORDS[sel].trim()} — selected`], [TEAL, "nearest words"]);
+          items.push([VIOLET, `${WORDS[sel].trim()} — selected`], [BRASS, "nearest words"]);
         }
         legend.innerHTML = items.map(([c, t]) => `<span><i style="background:rgb(${c[0] * 255 | 0},${c[1] * 255 | 0},${c[2] * 255 | 0})"></i>${t}</span>`).join("");
         legend.hidden = items.length === 0;
@@ -845,8 +879,8 @@
           const v = VEC[i * K + k] / max;
           const cell = strip.children[k];
           cell.style.background = v >= 0
-            ? `rgba(13, 148, 136, ${(0.12 + 0.88 * v).toFixed(3)})`
-            : `rgba(209, 54, 92, ${(0.12 + 0.88 * -v).toFixed(3)})`;
+            ? `rgba(161, 100, 47, ${(0.12 + 0.88 * v).toFixed(3)})`
+            : `rgba(176, 58, 82, ${(0.12 + 0.88 * -v).toFixed(3)})`;
         }
       }
 
