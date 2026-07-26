@@ -144,25 +144,38 @@
       border-radius: 4px;
       background: var(--panel);
       font: 600 15px var(--font-mono);
-      transition: transform 500ms cubic-bezier(.2,.8,.2,1);
+      transition: transform 560ms cubic-bezier(.2,.8,.2,1), opacity 360ms ease, background-color 360ms ease, border-color 360ms ease;
     }
 
     .t1 { top: 102px; left: 38px; color: var(--accent); }
     .t2 { top: 191px; left: 38px; color: var(--violet); }
     .t3 { top: 280px; left: 38px; color: var(--amber); }
-    .stage.active .t1 { transform: translate(206px, 89px); }
-    .stage.active .t2 { transform: translate(206px, 0); }
-    .stage.active .t3 { transform: translate(206px, -89px); }
+    .stage.active .t1 { border-color: var(--accent); background: rgba(161, 100, 47, 0.15); animation: focus-token 720ms var(--ease); }
+    .stage.active .t2, .stage.active .t3 { transform: translateX(-6px); opacity: 0.4; }
+    @keyframes focus-token { 0% { transform: none; } 58% { transform: translateX(12px) scale(1.06); } 100% { transform: none; } }
 
-    .core { position: absolute; z-index: 1; top: 139px; right: 34px; display: grid; place-items: center; width: 156px; height: 156px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--accent-wash); color: var(--ink); font-weight: 600; letter-spacing: -0.01em; }
-    .core::before, .core::after { content: ""; position: absolute; border: 1px solid var(--line); border-radius: 50%; inset: -22px; }
-    .core::after { inset: -48px; border-color: rgba(161, 100, 47, 0.2); }
+    .attention-link { position: absolute; z-index: 1; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    .attention-path { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 680ms var(--ease), opacity 180ms ease; }
+    .link-origin, .link-end, .link-halo { fill: var(--accent); opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0); }
+    .link-origin { transition: opacity 160ms ease, transform 240ms var(--ease); }
+    .link-end { transition: opacity 180ms ease 500ms, transform 280ms var(--ease) 500ms; }
+    .link-halo { fill: var(--accent-wash); stroke: rgba(161, 100, 47, 0.42); stroke-width: 1; vector-effect: non-scaling-stroke; transition: opacity 220ms ease 540ms, transform 360ms var(--ease) 540ms; }
+    .stage.active .attention-path { opacity: 0.96; stroke-dashoffset: 0; }
+    .stage.active .link-origin { opacity: 0.72; transform: scale(1); }
+    .stage.active .link-end, .stage.active .link-halo { opacity: 1; transform: scale(1); }
 
-    .stage-note { position: absolute; right: 25px; bottom: 22px; max-width: 220px; margin: 0; color: var(--muted); font-size: 13px; text-align: right; }
+    .core { position: absolute; z-index: 2; top: 139px; right: 34px; display: grid; place-items: center; width: 156px; height: 156px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--accent-wash); color: var(--ink); font: 600 22px var(--font-mono); letter-spacing: -0.01em; transition: border-color 360ms ease, background-color 360ms ease; }
+    .core::before { content: ""; position: absolute; inset: -28px; border: 1px solid rgba(161, 100, 47, 0.24); border-radius: 50%; transition: transform 560ms var(--ease), border-color 360ms ease; }
+    .stage.active .core { border-color: var(--accent); background: rgba(161, 100, 47, 0.14); animation: query-pulse 720ms var(--ease); }
+    .stage.active .core::before { transform: scale(0.92); border-color: rgba(161, 100, 47, 0.46); }
+    @keyframes query-pulse { 0% { transform: none; } 42% { transform: scale(1.045); } 100% { transform: none; } }
+
+    .stage-note { position: absolute; right: 25px; bottom: 22px; max-width: 270px; margin: 0; color: var(--muted); font-size: 13px; text-align: right; }
 
     .section { padding-top: 86px; }
     .section h2 { margin: 0; max-width: 700px; font-family: var(--font-serif); font-weight: 700; font-size: clamp(30px, 4.5vw, 46px); line-height: 1.02; letter-spacing: -0.01em; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
+    .concept-grid { grid-template-columns: repeat(2, 1fr); }
     .card { min-height: 214px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
     .card small { color: var(--accent-ink); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
     .card h3 { margin: 44px 0 9px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
@@ -185,22 +198,22 @@
       .shell { width: min(100% - 24px, 1120px); }
       nav { gap: 12px; }
       main { padding-top: 44px; }
-      .stage { min-height: 350px; }
-      .token { width: 62px; left: 24px; }
+      .stage { min-height: 390px; }
+      .actions { flex-direction: column; }
+      .actions .button { width: 100%; justify-content: center; }
+      .token { width: 76px; left: 24px; }
       .core { right: 18px; width: 128px; height: 128px; }
-      .stage.active .token { transform: translate(120px, 0); }
-      .stage.active .t1 { transform: translate(120px, 89px); }
-      .stage.active .t3 { transform: translate(120px, -89px); }
       footer { flex-direction: column; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+      .link-end, .link-halo { transition-delay: 0ms !important; }
     }
   </style>
 </head>
-<body>
+<body id="top">
   <div class="shell">
     <header>
       <a class="brand" href="#top" aria-label="Peek LLM home">
@@ -216,35 +229,40 @@
       </nav>
     </header>
 
-    <main id="top">
+    <main>
       <section class="hero" aria-labelledby="hero-title">
         <div>
-          <p class="eyebrow">Interactive AI knowledge visualization</p>
+          <p class="eyebrow">Interactive explanations of language models</p>
           <h1 id="hero-title">Don’t just read it. <span>Peek inside.</span></h1>
           <p class="lede">See how language models work through focused, interactive visual explanations. No setup. No long video. Just one concept in one HTML file.</p>
           <div class="actions">
-            <a class="button primary" href="tokenization/index.html">First concept: Tokenization</a>
-            <button class="button" id="peek-button" type="button">Try a tiny peek</button>
-            <a class="button" href="#principles">Explore the idea</a>
+            <a class="button primary" href="#concepts">Explore the concepts</a>
+            <button class="button" id="peek-button" type="button" aria-controls="stage" aria-pressed="false">Try a tiny peek</button>
           </div>
         </div>
 
         <div class="stage" id="stage" aria-live="polite">
-          <span class="stage-label">Concept preview</span>
-          <span class="token t1">Query</span>
-          <span class="token t2">Key</span>
-          <span class="token t3">Value</span>
-          <div class="core">Attention</div>
-          <p class="stage-note" id="stage-note">Press the button to move information into focus.</p>
+          <span class="stage-label">Conceptual preview · Attention</span>
+          <span class="token t1">animal</span>
+          <span class="token t2">street</span>
+          <span class="token t3">crossed</span>
+          <svg class="attention-link" id="attention-link" aria-hidden="true" preserveAspectRatio="none">
+            <path class="attention-path" id="attention-path" pathLength="1"></path>
+            <circle class="link-origin" id="link-origin" r="3"></circle>
+            <circle class="link-halo" id="link-halo" r="9"></circle>
+            <circle class="link-end" id="link-end" r="4"></circle>
+          </svg>
+          <div class="core"><span>it</span></div>
+          <p class="stage-note" id="stage-note">The animal crossed the street because it… Which earlier word matters?</p>
         </div>
       </section>
 
       <section class="section" id="concepts" aria-labelledby="concepts-title">
         <p class="eyebrow">Concepts</p>
         <h2 id="concepts-title">The collection so far.</h2>
-        <div class="grid">
+        <div class="grid concept-grid">
           <a class="card concept" href="tokenization/index.html">
-            <small>Concept 01</small>
+            <small>Concept 01 · Start here</small>
             <h3>Tokenization</h3>
             <p>Watch the real GPT-2 tokenizer cut text into tokens — as guided slides, a single-screen studio, or a free-scroll playground.</p>
           </a>
@@ -288,19 +306,49 @@
       const stage = document.querySelector('#stage');
       const button = document.querySelector('#peek-button');
       const note = document.querySelector('#stage-note');
+      const source = document.querySelector('.core');
+      const target = document.querySelector('.t1');
+      const link = document.querySelector('#attention-link');
+      const path = document.querySelector('#attention-path');
+      const origin = document.querySelector('#link-origin');
+      const end = document.querySelector('#link-end');
+      const halo = document.querySelector('#link-halo');
+
+      const placeLink = () => {
+        const stageBox = stage.getBoundingClientRect();
+        const sourceBox = source.getBoundingClientRect();
+        const targetBox = target.getBoundingClientRect();
+        const x1 = sourceBox.left - stageBox.left + 1;
+        const y1 = sourceBox.top - stageBox.top + sourceBox.height / 2;
+        const x2 = targetBox.right - stageBox.left - 1;
+        const y2 = targetBox.top - stageBox.top + targetBox.height / 2;
+        const span = Math.max(80, x1 - x2);
+        const cx = (x1 + x2) / 2;
+        const cy = Math.min(y1, y2) - Math.min(62, span * 0.2);
+
+        link.setAttribute('viewBox', `0 0 ${stageBox.width} ${stageBox.height}`);
+        path.setAttribute('d', `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`);
+        origin.setAttribute('cx', x1);
+        origin.setAttribute('cy', y1);
+        end.setAttribute('cx', x2);
+        end.setAttribute('cy', y2);
+        halo.setAttribute('cx', x2);
+        halo.setAttribute('cy', y2);
+      };
+
+      placeLink();
+      if ('ResizeObserver' in window) new ResizeObserver(placeLink).observe(stage);
+      else window.addEventListener('resize', placeLink, { passive: true });
 
       button.addEventListener('click', () => {
+        placeLink();
         const active = stage.classList.toggle('active');
+        button.setAttribute('aria-pressed', String(active));
         button.textContent = active ? 'Reset the preview' : 'Try a tiny peek';
         note.textContent = active
-          ? 'Interaction turns a static structure into an observable process.'
-          : 'Press the button to move information into focus.';
+          ? '“it” connects back to “animal”. Attention brings the relevant context forward.'
+          : 'The animal crossed the street because it… Which earlier word matters?';
       });
-
-      document.addEventListener('pointermove', (event) => {
-        document.body.style.setProperty('--x', `${event.clientX}px`);
-        document.body.style.setProperty('--y', `${event.clientY}px`);
-      }, { passive: true });
     })();
   </script>
 </body>

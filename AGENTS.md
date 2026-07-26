@@ -16,14 +16,22 @@ Before implementing an exhibit, evaluate which layout shell fits the concept, fo
 - **Scroll** (`templates/scroll.html`) — dense, reference-like content that needs free scrolling and comparison.
 - **Studio** (`templates/studio.html`) — a single-screen workbench (side panels + central stage) for state-rich simulations the learner keeps manipulating; `tokenization/tokenizer-studio.html` is the reference implementation.
 
-All shells share the single "technical plate" visual identity defined in `templates/design-tokens.html` (warm paper, hairline rules, serif display type, weights ≤ 600). Templates are the floor (contract skeleton, tokens, mechanics), never the ceiling — design each exhibit freely for its concept. A concept may offer the same content in more than one shell, as `tokenization/` does.
+All shells share the single "technical plate" visual identity defined in `templates/design-tokens.html` (warm paper, hairline rules, serif display type, UI/data/prose weights ≤ 600, and serif 700 reserved for display headings and the brand wordmark). Templates are the floor (contract skeleton, tokens, mechanics), never the ceiling — design each exhibit freely for its concept. A concept may offer the same content in more than one shell, as `tokenization/` does.
 
 ## Start here
 
 1. Read `README.md` for the product contract.
 2. Read `CONTRIBUTING.md` before adding or changing an exhibit.
-3. When inspecting an exhibit, read first-party sections selectively and skip vendor blocks unless the task directly concerns that dependency.
-4. Run `python3 scripts/check.py` and `python3 -m unittest discover -s tests` before committing.
+3. Before a visual change, read `templates/design-tokens.html`; for Studio work, use `templates/studio.html` as the visual authority and `tokenization/tokenizer-studio.html` only as a layout and interaction reference.
+4. When inspecting an exhibit, read first-party sections selectively and skip vendor blocks unless the task directly concerns that dependency.
+5. Run `python3 scripts/check.py` and `python3 -m unittest discover -s tests` before committing.
+
+## Visual-change guardrails
+
+- Use the semantic neutral hierarchy in `templates/design-tokens.html`; do not invent per-page grayscale systems or copy arbitrary opacity values from another exhibit.
+- In each dense panel, identify one focal item or cluster that may use full `--ink`. Let readings, pane chrome, explanatory prose, and metadata recede through the shared tokens and the 600/500/400 weight roles.
+- Review both wide and narrow layouts. Check that adjacent headings, readings, and emphasized prose do not all compete at maximum contrast.
+- Update the living style guide and the relevant shell template when introducing a reusable visual rule; keep page-specific treatments in the exhibit.
 
 ## Hard rules
 

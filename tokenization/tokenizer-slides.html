@@ -61,9 +61,18 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px;
       width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 16px 0;
     }
+    header.top { flex-wrap: wrap; }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
     .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
     .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .exhibit-nav { display: flex; gap: 16px; font-size: 13.5px; }
+    .exhibit-nav a { color: var(--muted); text-decoration: none; }
+    .exhibit-nav a:hover { color: var(--ink); }
+    .exhibit-nav [aria-current="page"] { color: var(--ink); font-weight: 600; }
 
     .dots { display: flex; gap: 4px; align-items: center; }
     .dot { width: 32px; height: 32px; min-height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; position: relative; }
@@ -250,11 +259,20 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="./index.html" aria-label="Back to the Tokenization concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
-      Peek LLM · Tokenization
-    </a>
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Tokenization</a>
+    </div>
     <p class="label">Guided slides · GPT-2 r50k merge subset</p>
+    <nav class="exhibit-nav" aria-label="Tokenization exhibits">
+      <span aria-current="page">Slides</span>
+      <a href="tokenizer-studio.html">Studio</a>
+      <a href="tokenizer-playground.html">Playground</a>
+    </nav>
   </header>
 
   <main class="deck" id="deck">

@@ -44,7 +44,16 @@ Exhibits teach through images, motion, and play — text is only a signpost.
 
 Peek LLM has one visual identity — a "technical plate" language whose single source of truth is `templates/design-tokens.html` — and layout shells that share it. Do not fork the color system per exhibit; adapt hue usage, never the base palette.
 
-The identity in brief: warm light paper, hairline rules instead of shadows, corner-bracket frames for stages and instrument readouts, small uppercase letterspaced labels, serif type (`--font-serif`) reserved for display headings and `Fig.`-style captions, and monospace tabular numerals for data. Keep font weights at 600 or below — hierarchy comes from family, size, color, and spacing, not from stacking heavier weights. `templates/design-tokens.html` doubles as the living style guide; consult it before inventing a new component.
+The identity in brief: warm light paper, hairline rules instead of shadows, corner-bracket frames for stages and instrument readouts, small uppercase letterspaced labels, serif type (`--font-serif`) reserved for display headings, the brand wordmark, and `Fig.`-style captions, and monospace tabular numerals for data. UI, data, and prose stay at weight 600 or below; serif 700 is reserved for display headings and the brand wordmark. Hierarchy comes from family, size, color, and spacing, not from stacking heavier weights. `templates/design-tokens.html` doubles as the living style guide; consult it before inventing a new component.
+
+### Tonal hierarchy
+
+Treat contrast as a limited resource, especially in dense Studio side rails. Within a local panel or section, reserve `--ink` for the current focal item, active state, or key conclusion. Use `--ink-soft` for readings and emphasized supporting text, `--ink-subtle` for pane chrome and explanatory prose, and `--muted` for metadata. Do not give a pane heading, every statistic, and every bold phrase the highest contrast at the same time.
+
+- Use weight 600 for a focal label or reading, 500 for dense data and metadata, and 400 for prose; do not solve hierarchy by making several adjacent elements bold.
+- Prefer the semantic neutral tokens from `templates/design-tokens.html` over one-off black opacities. An exhibit may adapt their use to its content, but should not redefine the neutral hierarchy or base palette.
+- Keep one primary focal cluster per local panel. Supporting labels, formulas, annotations, and explanatory copy should visibly recede without falling below readable contrast.
+- Judge hierarchy in context at both the normal wide layout and a narrow layout. A value that works in isolation can still feel too heavy when repeated through an entire rail.
 
 Templates are the floor, not the ceiling: they provide the contract skeleton, design tokens, and reusable mechanics (the slides deck controller, scroll reveal). They do not prescribe the exhibit's design — compose the experience freely for the concept, and treat the exhibits in `tokenization/` as the quality bar.
 
@@ -88,7 +97,7 @@ The validator does not treat dormant network APIs inside a declared vendor scrip
 ## Review checklist
 
 1. Open the file directly with a `file://` URL, keep the browser offline, and complete the core explanation and primary interaction.
-2. Test keyboard navigation, touch-sized controls, a narrow viewport, and reduced motion.
+2. Test keyboard navigation, touch-sized controls, a narrow viewport, and reduced motion. At wide and narrow layouts, confirm that each dense panel has a clear focal item and does not render all headings, readings, and emphasized prose at maximum contrast.
 3. Verify that the animation and displayed numbers agree with the explanation.
 4. If the exhibit has an optional network feature, test its disclosure, learner-controlled activation, success, failure, and offline fallback.
 5. Confirm that the exhibit is the directly maintained source, contains no generated code from first-party tooling, and has no external runtime resources.

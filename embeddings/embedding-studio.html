@@ -58,8 +58,12 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
       width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line);
     }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
     .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
     .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
     .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
 
@@ -210,10 +214,14 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="./index.html" aria-label="Back to the embeddings concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
-      Peek LLM · Embeddings
-    </a>
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Embeddings</a>
+    </div>
     <p class="label">Studio · Model-derived GPT-2 data</p>
     <p class="fig-no">Fig. 1</p>
   </header>

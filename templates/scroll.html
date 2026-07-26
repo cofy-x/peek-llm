@@ -15,6 +15,8 @@
       color-scheme: light;
       --bg: #efece4;
       --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
       --muted: #716c5f;
       --panel: #f8f6f0;
       --line: rgba(46, 43, 37, 0.18);
@@ -48,8 +50,12 @@
     .shell { width: min(960px, calc(100% - 32px)); margin: 0 auto; padding: 26px 0 80px; }
 
     header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
     .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
     .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
 
     .plate-kicker { margin: 34px 0 6px; }
@@ -100,10 +106,14 @@
 <body>
   <div class="shell">
     <header class="top">
-      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
-        Peek LLM
-      </a>
+      <div class="breadcrumbs">
+        <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+          Peek LLM
+        </a>
+        <span class="crumb-sep" aria-hidden="true">/</span>
+        <a class="concept-link" href="./index.html">Concept</a>
+      </div>
       <p class="label">Conceptual illustration · replace with the data label</p>
     </header>
 

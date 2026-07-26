@@ -14,6 +14,8 @@
       color-scheme: light;
       --bg: #efece4;
       --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
       --muted: #716c5f;
       --panel: #f8f6f0;
       --line: rgba(46, 43, 37, 0.18);
@@ -49,6 +51,8 @@
       background: var(--bg);
     }
 
+    b, strong { font-weight: 600; }
+
     a { color: var(--accent-ink); }
     a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
 
@@ -58,8 +62,12 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
       width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line);
     }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
     .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
     .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
     .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
 
@@ -100,22 +108,22 @@
 
     button {
       min-height: 40px; padding: 0 18px; border: 1px solid var(--line-strong); border-radius: 3px;
-      background: transparent; color: var(--ink); font: 600 12.5px/1 inherit; font-family: inherit;
+      background: transparent; color: var(--ink); font: 500 12.5px/1 inherit; font-family: inherit;
       letter-spacing: 0.09em; text-transform: uppercase; cursor: pointer;
     }
     button:hover { border-color: var(--ink); }
     button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
-    button[aria-pressed="true"] { border-color: transparent; background: var(--ink); color: #efece4; }
+    button[aria-pressed="true"] { border-color: rgba(161, 100, 47, 0.7); background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
     button:disabled { opacity: 0.4; cursor: default; }
 
     .hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
-    .hint b { color: var(--accent-ink); }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
 
     /* ================= Left: controls ================= */
 
     .prompt-list { display: grid; gap: 8px; }
-    .prompt-btn { min-height: 44px; padding: 8px 12px; text-align: left; font: 600 13px/1.45 var(--font-mono); letter-spacing: 0; text-transform: none; white-space: normal; }
-    .prompt-btn[aria-pressed="true"] { background: var(--ink); color: #efece4; }
+    .prompt-btn { min-height: 44px; padding: 8px 12px; text-align: left; font: 500 13px/1.45 var(--font-mono); letter-spacing: 0; text-transform: none; white-space: normal; }
+    .prompt-btn[aria-pressed="true"] { border-color: rgba(161, 100, 47, 0.7); background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
 
     .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .preset-grid button { min-height: 40px; padding: 0 8px; }
@@ -131,8 +139,8 @@
 
     .caption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 0 2px; }
     .tokens { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-    .tok { padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 600 12.5px/1.5 var(--font-mono); white-space: pre; }
-    .tok.win { border-color: transparent; background: var(--violet); color: #f8f6f0; }
+    .tok { padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 500 12.5px/1.5 var(--font-mono); white-space: pre; }
+    .tok.win { border-color: transparent; background: var(--violet); color: #f8f6f0; font-weight: 600; }
     .tok.win.pop { animation: pop 420ms var(--ease); }
     @keyframes pop { 0% { transform: scale(0.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
     .badge { padding: 5px 10px; border: 1px solid var(--line); border-radius: 4px; background: rgba(239, 236, 228, 0.86); color: var(--muted); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
@@ -142,7 +150,7 @@
     .bar-row { display: grid; grid-template-columns: 108px minmax(0, 1fr) 58px; align-items: center; gap: 10px; min-height: 24px; padding: 1px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; text-align: left; letter-spacing: 0; text-transform: none; }
     .bar-row:hover, .bar-row:focus-visible { border-color: var(--line); background: rgba(248, 246, 240, 0.7); }
     .bar-row.sel { border-color: rgba(111, 99, 184, 0.55); background: rgba(111, 99, 184, 0.06); }
-    .bar-tok { font: 600 12.5px/1.3 var(--font-mono); color: rgba(46, 43, 37, 0.82); overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+    .bar-tok { font: 500 12.5px/1.3 var(--font-mono); color: rgba(46, 43, 37, 0.76); overflow: hidden; text-overflow: ellipsis; white-space: pre; }
     .bar-row.top .bar-tok { font-weight: 600; color: var(--ink); }
     .bar-row.sel .bar-tok, .bar-row.sel .bar-pct { color: var(--violet); }
     .bar-track { height: 12px; border-radius: 6px; background: rgba(46, 43, 37, 0.055); overflow: hidden; }
@@ -150,7 +158,7 @@
     .bar-row.win .bar-track i { background: linear-gradient(90deg, var(--violet), #8f86c9); }
     .bar-row.cut .bar-track i { background: rgba(46, 43, 37, 0.18); }
     .bar-row.cut .bar-tok, .bar-row.cut .bar-pct { color: rgba(113, 108, 95, 0.75); }
-    .bar-pct { font: 600 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
+    .bar-pct { font: 500 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--muted); }
     .bar-row.top .bar-pct { color: var(--ink); }
     .bars-more { margin: 2px 6px 0; color: var(--muted); font-size: 12px; }
 
@@ -165,7 +173,7 @@
     /* sample history */
     .history { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 26px; padding: 0 2px; }
     .history .h-label { color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 4px; }
-    .h-chip { padding: 2px 8px; border-radius: 4px; background: rgba(111, 99, 184, 0.1); color: var(--violet); font: 600 12px/1.5 var(--font-mono); white-space: pre; animation: pop 300ms var(--ease); }
+    .h-chip { padding: 2px 8px; border-radius: 4px; background: rgba(111, 99, 184, 0.1); color: var(--violet); font: 500 12px/1.5 var(--font-mono); white-space: pre; animation: pop 300ms var(--ease); }
 
     /* watch it write */
     .write { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -176,30 +184,34 @@
     .write-card:nth-child(2) .w-name { color: var(--violet); }
     .write-card:nth-child(3) .w-name { color: var(--amber); }
     .write-card .w-cfg { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-    .write-card .w-cfg span { padding: 1px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font: 600 10px/1.7 var(--font-mono); white-space: nowrap; }
-    .write-card .w-text { margin: 0; font: 500 12.5px/1.55 var(--font-mono); color: rgba(46, 43, 37, 0.88); word-break: break-word; }
+    .write-card .w-cfg span { padding: 1px 7px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font: 500 10px/1.7 var(--font-mono); white-space: nowrap; }
+    .write-card .w-text { margin: 0; font: 400 12.5px/1.55 var(--font-mono); color: rgba(46, 43, 37, 0.82); word-break: break-word; }
     .write-card .w-text .caret { display: inline-block; width: 7px; height: 14px; margin-left: 1px; vertical-align: -2px; background: var(--accent); animation: blink 800ms steps(1) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
 
     /* ================= Right: inspector ================= */
 
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .stat { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 8px 10px; }
-    .stat b { display: block; font-family: var(--font-mono); font-size: 17px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
-    .stat span { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; }
+    .stat b { display: block; color: var(--ink-soft); font-family: var(--font-mono); font-size: 17px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
 
-    .pick { display: flex; align-items: center; gap: 8px; font: 600 17px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
-    .pick .rank { color: var(--muted); font-size: 12px; font-weight: 600; }
+    .pick { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--ink); font: 600 17px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .pick .rank { color: var(--muted); font-size: 12px; font-weight: 500; }
+    .pick.tail .rank { flex-basis: 100%; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 400; line-height: 1.45; }
+    .aggregate-tag { padding: 3px 8px; border: 1px solid rgba(161, 100, 47, .45); border-radius: 4px; background: var(--accent-wash); color: var(--accent-ink); font: 600 10px/1 sans-serif; letter-spacing: .06em; text-transform: uppercase; }
     .weight-bar { height: 10px; border-radius: 6px; background: rgba(46, 43, 37, 0.08); overflow: hidden; margin-top: 10px; }
     .weight-bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width 420ms var(--ease); }
     .weight-val { margin: 6px 0 0; font: 600 13px/1.5 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
-    .calc { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font: 600 13px/1.7 var(--font-mono); }
+    .calc { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink-soft); font: 400 13px/1.7 var(--font-mono); }
     .calc .step { display: flex; justify-content: space-between; gap: 10px; }
-    .calc .step span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .calc .step span:last-child { color: var(--ink-soft); font-weight: 500; font-variant-numeric: tabular-nums; }
     .calc .muted { color: var(--muted); font-size: 12px; }
     .cut-tag { font: 600 11px/1 sans-serif; color: var(--rose); border: 1px solid currentColor; border-radius: 4px; padding: 3px 8px; letter-spacing: 0.06em; text-transform: uppercase; }
 
-    .explainer { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+    .explainer { margin: 0; padding: 0; color: var(--ink-subtle); list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+    .explainer b { color: var(--ink-soft); font-weight: 600; }
     .explainer li { padding-left: 14px; position: relative; }
     .explainer li::before { content: ""; position: absolute; left: 0; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
     .explainer li:nth-child(2)::before { background: var(--violet); }
@@ -229,10 +241,14 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="./index.html" aria-label="Back to the logits and sampling concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
-      Peek LLM · Logits &amp; Sampling
-    </a>
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Logits &amp; Sampling</a>
+    </div>
     <p class="label">Studio · Computed from GPT-2</p>
     <p class="fig-no">Fig. 1</p>
   </header>
@@ -318,7 +334,7 @@
       <section aria-labelledby="stats-title">
         <h2 class="pane-label" id="stats-title">This distribution</h2>
         <div class="stats">
-          <div class="stat"><b id="st-top1">–</b><span id="st-top1-label">top token</span></div>
+          <div class="stat"><b id="st-top1">–</b><span id="st-top1-label">top candidate</span></div>
           <div class="stat"><b id="st-entropy">–</b><span>entropy · bits</span></div>
           <div class="stat"><b id="st-pool">–</b><span>tokens in pool</span></div>
           <div class="stat"><b id="st-tail">–</b><span id="st-tail-label">tail bucket</span></div>
@@ -326,12 +342,12 @@
       </section>
 
       <section aria-labelledby="pick-title">
-        <h2 class="pane-label" id="pick-title">Selected token</h2>
+        <h2 class="pane-label" id="pick-title">Selected candidate</h2>
         <div id="pick-empty">
           <p class="empty-note">Hover or tap a bar — each bar is one candidate for the next token, with its real GPT-2 score.</p>
         </div>
         <div id="pick-panel" hidden>
-          <div class="pick"><span id="pick-tok">dog</span><span class="rank" id="pick-rank">#1 of 50,257</span><span class="cut-tag" id="pick-cut" hidden>cut</span></div>
+          <div class="pick" id="pick-head"><span id="pick-tok">dog</span><span class="aggregate-tag" id="pick-aggregate" hidden>Aggregate</span><span class="rank" id="pick-rank">#1 of 50,257</span><span class="cut-tag" id="pick-cut" hidden>cut</span></div>
           <div class="weight-bar"><i id="pick-bar"></i></div>
           <div class="calc" id="pick-calc"></div>
         </div>
@@ -672,7 +688,7 @@
         const hist = $("#history");
         const chip = document.createElement("span");
         chip.className = "h-chip";
-        chip.textContent = i === p.z.length ? "⁂ tail" : disp(p.topTokens[i]);
+        chip.textContent = i === p.z.length ? "Tail bucket" : disp(p.topTokens[i]);
         hist.appendChild(chip);
         while (hist.querySelectorAll(".h-chip").length > 14) hist.querySelector(".h-chip").remove();
       }
@@ -685,7 +701,7 @@
         if (state.winner >= 0) {
           const win = document.createElement("span");
           win.className = "tok win pop";
-          win.textContent = state.winner === p.z.length ? "⁂ tail" : disp(p.topTokens[state.winner]);
+          win.textContent = state.winner === p.z.length ? "Tail bucket" : disp(p.topTokens[state.winner]);
           el.appendChild(win);
         }
       }
@@ -695,8 +711,8 @@
       function renderStats(dist) {
         const p = cur();
         const top = dist.pool[0];
-        $("#st-top1").textContent = top.i === p.z.length ? "⁂ tail" : disp(p.topTokens[top.i]);
-        $("#st-top1-label").textContent = `top token · ${pct(dist.probs[top.i])}`;
+        $("#st-top1").textContent = top.i === p.z.length ? "Tail bucket" : disp(p.topTokens[top.i]);
+        $("#st-top1-label").textContent = `top candidate · ${pct(dist.probs[top.i])}`;
         $("#st-entropy").textContent = dist.entropy.toFixed(2);
         $("#st-pool").textContent = dist.pool.length.toLocaleString("en-US");
         const tailMass = dist.probs[p.z.length];
@@ -711,8 +727,10 @@
         empty.hidden = true; panel.hidden = false;
         const p = cur();
         const isTail = i === p.z.length;
-        $("#pick-tok").textContent = isTail ? "⁂ the tail" : disp(p.topTokens[i]);
-        $("#pick-rank").textContent = isTail ? `${p.tailTotal.toLocaleString("en-US")} tokens in 64 logit bins` : `#${i + 1} of ${GPT2_SAMP.vocab.toLocaleString("en-US")}`;
+        $("#pick-head").classList.toggle("tail", isTail);
+        $("#pick-tok").textContent = isTail ? "Tail bucket" : disp(p.topTokens[i]);
+        $("#pick-aggregate").hidden = !isTail;
+        $("#pick-rank").textContent = isTail ? `${p.tailTotal.toLocaleString("en-US")} low-probability tokens · grouped into 64 logit bins` : `#${i + 1} of ${GPT2_SAMP.vocab.toLocaleString("en-US")}`;
         $("#pick-cut").hidden = dist.kept[i];
         if (!dist.kept[i]) {
           const byK = i >= (topK() === Infinity ? p.z.length + 1 : Math.min(topK(), p.z.length + 1));
@@ -724,7 +742,7 @@
         if (isTail) {
           calc.innerHTML = `
             <div class="step"><span><math data-tex="\\mathrm{tail}\\; \\sum_b c_b\\, e^{z_b/T}" aria-label="tail, sum over bins of count times e to the z sub b over T"><mrow><mi>tail</mi><mspace width="0.33em"/><mo>∑</mo><msub><mi>c</mi><mi>b</mi></msub><msup><mi>e</mi><mrow><msub><mi>z</mi><mi>b</mi></msub><mo>/</mo><mi>T</mi></mrow></msup></mrow></math></span><span>${pctMath(dist.probs[i])}</span></div>
-            <div class="muted">one bucket of ${p.tailTotal.toLocaleString("en-US")} tokens — the model would pick one inside</div>`;
+            <div class="muted">aggregate of ${p.tailTotal.toLocaleString("en-US")} low-probability tokens — sampling this bucket would then choose one token inside</div>`;
         } else {
           const z = p.z[i];
           let zmax = p.z[0];

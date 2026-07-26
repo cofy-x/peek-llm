@@ -15,6 +15,8 @@
       color-scheme: light;
       --bg: #efece4;
       --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
       --muted: #716c5f;
       --panel: #f8f6f0;
       --line: rgba(46, 43, 37, 0.18);
@@ -56,8 +58,12 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
       width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line);
     }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
     .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
     .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
     .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
 
@@ -81,6 +87,7 @@
       background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line);
       font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink);
     }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
 
     .stage { display: grid; gap: 14px; overflow: hidden; padding: 16px 24px 20px; }
     .stage section { min-height: 0; }
@@ -114,6 +121,11 @@
 
     .hint { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
     .hint b { color: var(--accent-ink); font-weight: 600; }
+    .inspector-focus { margin: 0 0 4px; color: var(--ink); font: 600 18px/1.25 var(--font-mono); }
+    .inspector-reading { margin: 0; color: var(--ink-soft); font: 600 17px/1.25 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .inspector-meta { margin: 3px 0 0; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .inspector-copy { margin: 12px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .inspector-copy strong { color: var(--ink-soft); font-weight: 600; }
 
     @media (max-width: 980px) {
       body { overflow: auto; display: block; }
@@ -131,10 +143,14 @@
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="./index.html" aria-label="Back to the concept index">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
-      Peek LLM · Concept
-    </a>
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Concept</a>
+    </div>
     <p class="label">Studio · replace with the data label</p>
     <p class="fig-no">Fig. 1</p>
   </header>
@@ -160,7 +176,10 @@
     <!-- Right: inspector — live stats, selection details, explanation. -->
     <aside class="rail rail-right" aria-labelledby="inspector-title">
       <h2 class="pane-label" id="inspector-title">Inspector</h2>
-      <p class="hint">Live numbers, details of the current selection, and one-line explanations of what the stage is showing.</p>
+      <p class="inspector-focus">selected item</p>
+      <p class="inspector-reading">0.85</p>
+      <p class="inspector-meta">Live reading</p>
+      <p class="inspector-copy"><strong>Selected state.</strong> Keep one local focal item at full contrast; readings, metadata, and explanation should recede in that order.</p>
       <h2 class="pane-label" style="margin-top:20px;">Sources</h2>
       <p class="hint"><a href="https://example.com/primary-source" rel="noreferrer">Replace with a primary source</a></p>
     </aside>

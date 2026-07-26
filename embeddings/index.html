@@ -84,6 +84,10 @@
     .concept-foot { margin-top: 28px; padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
     .concept-foot b { color: var(--ink); }
     .concept-foot a { color: var(--accent-ink); }
+    .concept-step { display: flex; flex-direction: column; gap: 2px; color: var(--muted); text-decoration: none; }
+    .concept-step small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; }
+    .concept-step.next { margin-left: auto; text-align: right; }
+    .concept-step:hover b { color: var(--accent-ink); }
 
     footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
     footer a { color: var(--muted); }
@@ -131,10 +135,10 @@
         </li>
       </ul>
 
-      <div class="concept-foot">
-        <span><b>Next concept · <a href="../attention/index.html">Attention</a>.</b> How tokens look at each other.</span>
-        <span>Concept 03 →</span>
-      </div>
+      <nav class="concept-foot" aria-label="Concept sequence">
+        <a class="concept-step" href="../tokenization/index.html"><small>Previous · Concept 01</small><b>← Tokenization</b></a>
+        <a class="concept-step next" href="../attention/index.html"><small>Next · Concept 03</small><b>Attention →</b></a>
+      </nav>
     </main>
 
     <footer>

@@ -78,6 +78,11 @@
     /* ---- concept footer nav ---- */
     .concept-foot { margin-top: 28px; padding: 18px 22px; border: 1px dashed var(--line); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
     .concept-foot b { color: var(--ink); }
+    .concept-step { display: flex; flex-direction: column; gap: 2px; color: var(--muted); text-decoration: none; }
+    .concept-step small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; }
+    .concept-step.next { margin-left: auto; text-align: right; }
+    .concept-step:hover b { color: var(--accent-ink); }
+    .concept-step.planned b { color: var(--muted); }
 
     footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
     footer a { color: var(--muted); }
@@ -125,10 +130,10 @@
         </li>
       </ul>
 
-      <div class="concept-foot">
-        <span><b>Next concept · KV cache.</b> Why the model doesn't re-read everything for every token. Planned.</span>
-        <span>Concept 05 →</span>
-      </div>
+      <nav class="concept-foot" aria-label="Concept sequence">
+        <a class="concept-step" href="../attention/index.html"><small>Previous · Concept 03</small><b>← Attention</b></a>
+        <span class="concept-step next planned"><small>Next · Concept 05</small><b>KV cache · In development</b></span>
+      </nav>
     </main>
 
     <footer>
