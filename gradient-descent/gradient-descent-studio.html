@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Peek LLM exhibit: an offline gradient descent studio with a native Canvas loss surface, top-down contour view, learning-rate experiments, and live computed updates.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f' stroke='none'/%3E%3C/svg%3E">
+  <title>Gradient Descent Studio — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
+      --amber: #b45309;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --radius: 6px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; line-height: 1.55; overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--bg); }
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
+
+    /* ================= Chrome ================= */
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+
+    /* ================= Workbench ================= */
+    .workbench { display: grid; grid-template-columns: 270px minmax(460px, 1fr) 330px; min-height: 0; }
+    aside, .stage { min-height: 0; overflow-y: auto; }
+    .rail { padding: 16px 20px 20px; }
+    .rail-left { border-right: 1px solid var(--line); }
+    .rail-right { border-left: 1px solid var(--line); }
+    .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .pane-label { display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px; background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line); color: var(--ink); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
+
+    button { min-height: 38px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: 600 11.5px/1 inherit; font-family: inherit; letter-spacing: 0.075em; text-transform: uppercase; cursor: pointer; }
+    button:hover { border-color: var(--ink); }
+    button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
+    button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-ink); }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .button-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+    .run-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .run-row button { padding: 0 7px; }
+
+    .control { margin-top: 14px; }
+    .control-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 7px; }
+    .control-head label { color: var(--ink-subtle); font-size: 12.5px; font-weight: 500; }
+    .reading { color: var(--ink-soft); font: 600 12.5px var(--font-mono); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; height: 24px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+    .range-scale { display: flex; justify-content: space-between; color: var(--muted); font: 500 9.5px var(--font-mono); }
+    .hint { margin: 10px 0 0; color: var(--muted); font-size: 12.5px; }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
+    .preset-note { min-height: 38px; margin: 9px 0 0; color: var(--ink-subtle); font-size: 12.5px; }
+
+    /* ================= Stage ================= */
+    .stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; overflow: hidden; padding: 16px 20px 18px; }
+    .stage-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .view-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mode-switch { display: flex; gap: 6px; }
+    .mode-switch button { min-height: 34px; }
+    .reset-view { min-height: 34px; border-color: var(--line); color: var(--muted); }
+    .legend { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 11px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 16px; height: 2px; background: var(--accent); }
+    .legend .trajectory i { height: 3px; background: linear-gradient(90deg, rgba(46, 43, 37, 0.18), var(--accent)); }
+    .legend .uphill i { background: var(--rose); }
+    .legend .grad i { background: var(--violet); }
+    .legend .minimum i { width: 8px; height: 8px; border: 1.5px solid var(--green); border-radius: 50%; background: transparent; }
+    .frame { position: relative; min-height: 0; overflow: hidden; border: 1px solid var(--line); background:
+      linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px,
+      var(--panel); background-repeat: no-repeat; }
+    .canvas-wrap { position: absolute; inset: 0; min-height: 360px; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    canvas.dragging { cursor: grabbing; }
+    .plate-note { position: absolute; z-index: 2; top: 12px; left: 14px; margin: 0; padding: 3px 7px; background: rgba(248, 246, 240, 0.86); color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; }
+    .stage-bottom { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; color: var(--muted); font-size: 12.5px; }
+    .stage-status { margin: 0; color: var(--ink-subtle); }
+    .stage-status strong { color: var(--ink-soft); font-weight: 600; }
+    .stage-help { margin: 0; text-align: right; }
+
+    /* ================= Inspector ================= */
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .stat b { display: block; overflow: hidden; color: var(--ink-soft); font: 600 17px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; text-overflow: ellipsis; }
+    .stat span { display: block; margin-top: 4px; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; }
+    .state-name { margin: 0 0 4px; color: var(--ink); font: 600 18px/1.25 var(--font-mono); }
+    .state-meta { margin: 0; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; }
+    .formula-card { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); color: var(--ink-soft); font: 400 13px/1.55 var(--font-mono); }
+    .formula-card math { font-family: var(--font-serif); font-size: 16px; }
+    .landscape-formula math { font-size: 15px; }
+    .landscape-formula mtable { width: 100%; }
+    .formula-card .live-update { display: block; margin-top: 8px; color: var(--ink-soft); font-weight: 500; }
+    .explain { margin: 10px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .explain strong { color: var(--ink-soft); font-weight: 600; }
+    .status-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 9px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); font-size: 11.5px; font-weight: 600; }
+    .status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); }
+    .status-chip[data-state="converged"]::before { background: var(--green); }
+    .status-chip[data-state="diverged"]::before { background: var(--rose); }
+    .status-chip[data-state="running"]::before { background: var(--accent); }
+    .source-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+    .source-list li + li { margin-top: 6px; }
+
+    @media (max-width: 1080px) {
+      body { overflow: auto; display: block; }
+      .workbench { grid-template-columns: 1fr; }
+      aside, .stage { overflow: visible; }
+      .rail-left, .rail-right { border: 0; }
+      .rail-left { border-bottom: 1px solid var(--line); }
+      .rail-right { border-top: 1px solid var(--line); }
+      .stage { min-height: 620px; }
+      .canvas-wrap { min-height: 500px; }
+    }
+    @media (max-width: 620px) {
+      header.top { padding: 9px 12px; }
+      header.top > .label { order: 3; width: 100%; }
+      .workbench .rail, .stage { padding-left: 12px; padding-right: 12px; }
+      .stage { min-height: 520px; }
+      .canvas-wrap { min-height: 410px; }
+      .stage-bottom { align-items: flex-start; flex-direction: column; gap: 4px; }
+      .stage-help { text-align: left; }
+      .legend { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Gradient Descent</a>
+    </div>
+    <p class="label">Studio · Computed loss landscape</p>
+    <p class="fig-no">Fig. 1</p>
+  </header>
+
+  <div class="workbench">
+    <aside class="rail rail-left" aria-labelledby="controls-title">
+      <section>
+        <h2 class="pane-label" id="controls-title">Learning rate</h2>
+        <div class="button-row" aria-label="Learning rate presets">
+          <button type="button" data-rate="0.04">Cautious</button>
+          <button type="button" data-rate="0.12" aria-pressed="true">Stable</button>
+          <button type="button" data-rate="1.20">Overshoot</button>
+          <button type="button" data-rate="2.05">Diverge</button>
+        </div>
+        <p class="preset-note" id="preset-note">Stable · reaches the basin quickly, then settles.</p>
+        <div class="control">
+          <div class="control-head"><label for="rate">Step size η</label><output class="reading" id="rate-value" for="rate">0.12</output></div>
+          <input id="rate" type="range" min="0.02" max="2.20" step="0.01" value="0.12">
+          <span class="range-scale"><span>0.02</span><span>2.20</span></span>
+        </div>
+      </section>
+
+      <section aria-labelledby="start-title">
+        <h2 class="pane-label" id="start-title">Starting point</h2>
+        <div class="control">
+          <div class="control-head"><label for="start-x">w₁</label><output class="reading" id="start-x-value" for="start-x">2.50</output></div>
+          <input id="start-x" type="range" min="-3.3" max="3.3" step="0.05" value="2.5">
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="start-y">w₂</label><output class="reading" id="start-y-value" for="start-y">2.50</output></div>
+          <input id="start-y" type="range" min="-3.3" max="3.3" step="0.05" value="2.5">
+        </div>
+        <p class="hint"><b>Try this.</b> Change the starting point and see which of the two equal valleys captures the path.</p>
+      </section>
+
+      <section aria-labelledby="play-title">
+        <h2 class="pane-label" id="play-title">Run the optimizer</h2>
+        <div class="run-row">
+          <button class="primary" id="run" type="button" aria-pressed="false">Run</button>
+          <button id="step" type="button">Step</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="speed">Playback speed</label><output class="reading" id="speed-value" for="speed">5</output></div>
+          <input id="speed" type="range" min="1" max="10" step="1" value="5">
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-tools">
+        <div class="view-tools">
+          <div class="mode-switch" aria-label="Visualization mode">
+            <button type="button" data-view="surface" aria-pressed="true">3D surface</button>
+            <button type="button" data-view="contours" aria-pressed="false">Contours</button>
+          </div>
+          <button class="reset-view" id="reset-view" type="button">Reset view</button>
+        </div>
+        <div class="legend" aria-label="Visualization legend">
+          <span class="trajectory"><i></i>trajectory · newer</span>
+          <span class="uphill"><i></i>loss ↑</span>
+          <span><i></i>update −η∇L</span>
+          <span class="grad"><i></i>gradient ∇L</span>
+          <span class="minimum"><i></i>minimum</span>
+        </div>
+      </div>
+
+      <section class="frame" aria-labelledby="stage-title">
+        <h1 class="plate-note" id="stage-title">Computed example · two-parameter loss</h1>
+        <div class="canvas-wrap">
+          <canvas id="landscape" tabindex="0" role="img" aria-label="Three-dimensional computed loss surface. The current point starts at w1 2.50 and w2 2.50. Use the controls to run gradient descent; use arrow keys to rotate the surface.">Your browser does not support Canvas. The controls and computed readings remain available.</canvas>
+        </div>
+      </section>
+
+      <div class="stage-bottom">
+        <p class="stage-status" id="stage-status" aria-live="polite"><strong>Ready.</strong> Press Step once to separate the gradient from the update.</p>
+        <p class="stage-help" id="stage-help">Drag or use arrow keys to rotate · switch to contours for a top-down path</p>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-labelledby="inspector-title">
+      <section>
+        <h2 class="pane-label" id="inspector-title">Current state</h2>
+        <div class="stats">
+          <div class="stat"><b id="loss-reading">6.542</b><span>Loss L</span></div>
+          <div class="stat"><b id="gradient-reading">3.174</b><span>Gradient norm</span></div>
+          <div class="stat"><b id="step-reading">0</b><span>Update step</span></div>
+          <div class="stat"><b id="delta-reading">0.381</b><span>Update norm</span></div>
+        </div>
+        <span class="status-chip" id="status-chip" data-state="ready">Ready</span>
+      </section>
+
+      <section aria-labelledby="update-title">
+        <h2 class="pane-label" id="update-title">One update</h2>
+        <p class="state-name" id="parameter-reading">w = [2.500, 2.500]</p>
+        <p class="state-meta">Current parameter vector</p>
+        <div class="formula-card">
+          <math display="block" data-tex="w_{t+1}=w_t-\eta\nabla L(w_t)" aria-label="w at t plus 1 equals w at t minus eta times the gradient of L at w t">
+            <mrow><msub><mi>w</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mi>t</mi></msub><mo>−</mo><mi>η</mi><mo>⁢</mo><mo>∇</mo><mi>L</mi><mo>(</mo><msub><mi>w</mi><mi>t</mi></msub><mo>)</mo></mrow>
+          </math>
+          <span class="live-update" id="update-reading">next = [2.175, 2.301]</span>
+        </div>
+        <p class="explain"><strong>The violet arrow is the gradient.</strong> The brass arrow reverses it and scales it by η; that brass vector is the update actually applied.</p>
+      </section>
+
+      <section aria-labelledby="landscape-title">
+        <h2 class="pane-label" id="landscape-title">The landscape</h2>
+        <div class="formula-card landscape-formula">
+          <math display="block" data-tex="L(w_1,w_2)=\frac12(w_1^2+w_2^2)+0.2\sin(3w_1)+0.3\cos(3w_2)" aria-label="L of w 1 and w 2 equals one half times w 1 squared plus w 2 squared, plus 0.2 sine of 3 w 1, plus 0.3 cosine of 3 w 2">
+            <mtable columnalign="left" rowspacing="0.2em">
+              <mtr><mtd><mrow><mi>L</mi><mo>(</mo><msub><mi>w</mi><mn>1</mn></msub><mo>,</mo><msub><mi>w</mi><mn>2</mn></msub><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>(</mo><msubsup><mi>w</mi><mn>1</mn><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>w</mi><mn>2</mn><mn>2</mn></msubsup><mo>)</mo></mrow></mtd></mtr>
+              <mtr><mtd><mrow><mspace width="1.2em"></mspace><mo>+</mo><mn>0.2</mn><mo>⁢</mo><mi>sin</mi><mo>(</mo><mn>3</mn><msub><mi>w</mi><mn>1</mn></msub><mo>)</mo><mo>+</mo><mn>0.3</mn><mo>⁢</mo><mi>cos</mi><mo>(</mo><mn>3</mn><msub><mi>w</mi><mn>2</mn></msub><mo>)</mo></mrow></mtd></mtr>
+            </mtable>
+          </math>
+        </div>
+        <p class="explain">This is a <strong>computed teaching landscape</strong>, not a trace from a trained model. It has two equal global minima near <span class="reading">[−0.330, ±0.731]</span>.</p>
+      </section>
+
+      <section aria-labelledby="sources-title">
+        <h2 class="pane-label" id="sources-title">Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://d2l.ai/chapter_optimization/gd.html" rel="noreferrer">Dive into Deep Learning · Gradient Descent</a></li>
+          <li><a href="https://www.deeplearningbook.org/contents/optimization.html" rel="noreferrer">Deep Learning · Optimization for Training Deep Models</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      /* ================= Model ================= */
+      const DOMAIN = 3.3;
+      const DEFAULT_CAMERA = { yaw: -0.68, pitch: 0.68 };
+      const MINIMA = [[-0.3296861167, -0.7311307127], [-0.3296861167, 0.7311307127]];
+      const PRESET_COPY = new Map([
+        [0.04, "Cautious · small, dependable updates with a long approach."],
+        [0.12, "Stable · reaches the basin quickly, then settles."],
+        [1.20, "Overshoot · crosses the valley and keeps correcting."],
+        [2.05, "Diverge · each correction grows instead of settling."]
+      ]);
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const loss = ([x, y]) => 0.5 * (x * x + y * y) + 0.2 * Math.sin(3 * x) + 0.3 * Math.cos(3 * y);
+      const gradient = ([x, y]) => [x + 0.6 * Math.cos(3 * x), y - 0.9 * Math.sin(3 * y)];
+      const magnitude = ([x, y]) => Math.hypot(x, y);
+      const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+      const fmt = (n, digits = 3) => Number.isFinite(n) ? n.toFixed(digits).replace("-0.000", "0.000") : "—";
+
+      const state = {
+        point: [2.5, 2.5],
+        start: [2.5, 2.5],
+        eta: 0.12,
+        speed: 5,
+        step: 0,
+        path: [[2.5, 2.5]],
+        running: false,
+        outcome: "ready",
+        view: "surface",
+        yaw: DEFAULT_CAMERA.yaw,
+        pitch: DEFAULT_CAMERA.pitch,
+        surfaceView: null,
+        lastTick: 0
+      };
+
+      const $ = (selector) => document.querySelector(selector);
+      const canvas = $("#landscape");
+      const ctx = canvas.getContext("2d");
+      const css = getComputedStyle(document.documentElement);
+      const colors = {
+        panel: css.getPropertyValue("--panel").trim(),
+        ink: css.getPropertyValue("--ink").trim(),
+        muted: css.getPropertyValue("--muted").trim(),
+        line: "rgba(46,43,37,0.18)",
+        lineStrong: "rgba(46,43,37,0.42)",
+        accent: css.getPropertyValue("--accent").trim(),
+        violet: css.getPropertyValue("--violet").trim(),
+        green: css.getPropertyValue("--green").trim(),
+        rose: css.getPropertyValue("--rose").trim()
+      };
+
+      /* ================= Computation ================= */
+      function candidateUpdate() {
+        const g = gradient(state.point);
+        return {
+          gradient: g,
+          delta: [-state.eta * g[0], -state.eta * g[1]],
+          next: [state.point[0] - state.eta * g[0], state.point[1] - state.eta * g[1]]
+        };
+      }
+
+      function stop(outcome) {
+        state.running = false;
+        state.outcome = outcome;
+        $("#run").setAttribute("aria-pressed", "false");
+        $("#run").textContent = "Run";
+      }
+
+      function stepOnce() {
+        if (state.outcome === "converged" || state.outcome === "diverged") return;
+        const { next } = candidateUpdate();
+        state.point = next;
+        state.step += 1;
+        state.path.push([...next]);
+
+        const nextLoss = loss(next);
+        const nextGradient = magnitude(gradient(next));
+        if (!Number.isFinite(nextLoss) || Math.max(Math.abs(next[0]), Math.abs(next[1])) > 12 || nextLoss > 80) {
+          stop("diverged");
+        } else if (nextGradient < 0.015) {
+          stop("converged");
+        } else {
+          state.outcome = state.running ? "running" : "stepped";
+        }
+        updateAll();
+      }
+
+      function reset(point = state.start) {
+        stop("ready");
+        state.point = [...point];
+        state.start = [...point];
+        state.step = 0;
+        state.path = [[...point]];
+        updateAll();
+      }
+
+      function schedule(now) {
+        if (!state.running) return;
+        const interval = reducedMotion ? 520 : 880 - state.speed * 74;
+        if (!state.lastTick || now - state.lastTick >= interval) {
+          state.lastTick = now;
+          stepOnce();
+        }
+        if (state.running) requestAnimationFrame(schedule);
+      }
+
+      /* ================= Canvas primitives ================= */
+      function canvasSize() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const width = Math.max(320, Math.round(rect.width));
+        const height = Math.max(320, Math.round(rect.height));
+        if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { width, height };
+      }
+
+      function clear(width, height) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = colors.panel;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      function surfaceColor(value, alpha = 1) {
+        const t = clamp((value + 0.03) / 8.5, 0, 1);
+        const low = [111, 99, 184];
+        const mid = [221, 211, 190];
+        const high = [161, 100, 47];
+        const a = t < 0.48 ? t / 0.48 : (t - 0.48) / 0.52;
+        const from = t < 0.48 ? low : mid;
+        const to = t < 0.48 ? mid : high;
+        const mix = from.map((v, i) => Math.round(v + (to[i] - v) * a));
+        return `rgba(${mix[0]},${mix[1]},${mix[2]},${alpha})`;
+      }
+
+      function line(points, stroke, width = 1, dash = []) {
+        if (points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+        ctx.setLineDash(dash);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = width;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function arrow(from, to, stroke, width = 2) {
+        line([from, to], stroke, width);
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const head = 8;
+        ctx.beginPath();
+        ctx.moveTo(to.x, to.y);
+        ctx.lineTo(to.x - head * Math.cos(angle - 0.45), to.y - head * Math.sin(angle - 0.45));
+        ctx.lineTo(to.x - head * Math.cos(angle + 0.45), to.y - head * Math.sin(angle + 0.45));
+        ctx.closePath();
+        ctx.fillStyle = stroke;
+        ctx.fill();
+      }
+
+      function pointMark(point, fill, radius = 5, ring = false) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = ring ? colors.panel : fill;
+        ctx.fill();
+        ctx.strokeStyle = fill;
+        ctx.lineWidth = ring ? 2 : 1;
+        ctx.stroke();
+      }
+
+      function trajectoryStroke(age, uphill) {
+        const alpha = 0.16 + age * 0.69;
+        if (uphill) return `rgba(176,58,82,${alpha})`;
+        const old = [46, 43, 37];
+        const fresh = [161, 100, 47];
+        const mix = old.map((value, index) => Math.round(value + (fresh[index] - value) * age));
+        return `rgba(${mix[0]},${mix[1]},${mix[2]},${alpha})`;
+      }
+
+      function drawTrajectory(entries) {
+        if (entries.length < 2) return;
+        const denominator = Math.max(1, entries.length - 1);
+        for (let i = 1; i < entries.length; i++) {
+          const age = i / denominator;
+          const uphill = loss(entries[i].model) > loss(entries[i - 1].model) + 0.000001;
+          line([entries[i - 1].screen, entries[i].screen], trajectoryStroke(age, uphill), 1.1 + age * 1.3);
+        }
+
+        const firstRecent = Math.max(1, entries.length - 9);
+        for (let i = firstRecent; i < entries.length - 1; i++) {
+          const age = i / denominator;
+          const uphill = loss(entries[i].model) > loss(entries[i - 1].model) + 0.000001;
+          pointMark(entries[i].screen, trajectoryStroke(age, uphill), 1.5 + age * 0.8);
+        }
+      }
+
+      /* ================= 3D surface ================= */
+      function rawSurfacePoint(x, y, z) {
+        const cosYaw = Math.cos(state.yaw);
+        const sinYaw = Math.sin(state.yaw);
+        const sinPitch = Math.sin(state.pitch);
+        const cosPitch = Math.cos(state.pitch);
+        const rx = x * cosYaw - y * sinYaw;
+        const rz = x * sinYaw + y * cosYaw;
+        return { x: rx, y: rz * sinPitch - z * 0.34 * cosPitch, depth: rz * cosPitch + z * 0.34 * sinPitch };
+      }
+
+      function fitSurface(width, height) {
+        const samples = [];
+        const n = 22;
+        for (let ix = 0; ix <= n; ix++) {
+          for (let iy = 0; iy <= n; iy++) {
+            const x = -DOMAIN + ix / n * DOMAIN * 2;
+            const y = -DOMAIN + iy / n * DOMAIN * 2;
+            samples.push(rawSurfacePoint(x, y, loss([x, y])));
+          }
+        }
+        const bounds = samples.reduce((box, point) => ({
+          minX: Math.min(box.minX, point.x), maxX: Math.max(box.maxX, point.x),
+          minY: Math.min(box.minY, point.y), maxY: Math.max(box.maxY, point.y)
+        }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+        const margins = { left: 30, right: 30, top: 54, bottom: 64 };
+        const availableWidth = width - margins.left - margins.right;
+        const availableHeight = height - margins.top - margins.bottom;
+        const scale = Math.min(availableWidth / (bounds.maxX - bounds.minX), availableHeight / (bounds.maxY - bounds.minY)) * 0.985;
+        const slackX = availableWidth - (bounds.maxX - bounds.minX) * scale;
+        const slackY = availableHeight - (bounds.maxY - bounds.minY) * scale;
+        state.surfaceView = {
+          width, height, scale,
+          offsetX: margins.left + slackX * 0.5 - bounds.minX * scale,
+          offsetY: margins.top + slackY * 0.62 - bounds.minY * scale
+        };
+      }
+
+      function surfaceProject(width, height) {
+        if (!state.surfaceView || state.surfaceView.width !== width || state.surfaceView.height !== height) fitSurface(width, height);
+        const view = state.surfaceView;
+        return (x, y, z) => {
+          const raw = rawSurfacePoint(x, y, z);
+          return { x: view.offsetX + raw.x * view.scale, y: view.offsetY + raw.y * view.scale, depth: raw.depth };
+        };
+      }
+
+      function drawAxisTriad(width, height) {
+        const origin = rawSurfacePoint(0, 0, 0);
+        const directions = [
+          { label: "w₁", point: rawSurfacePoint(1, 0, 0) },
+          { label: "w₂", point: rawSurfacePoint(0, 1, 0) },
+          { label: "L", point: rawSurfacePoint(0, 0, 1) }
+        ];
+        const base = { x: 48, y: height - 42 };
+        ctx.font = "500 10px ui-monospace, monospace";
+        directions.forEach(({ label, point }) => {
+          const dx = point.x - origin.x;
+          const dy = point.y - origin.y;
+          const length = Math.max(0.001, Math.hypot(dx, dy));
+          const end = { x: base.x + dx / length * 27, y: base.y + dy / length * 27 };
+          arrow(base, end, "rgba(113,108,95,0.72)", 1);
+          ctx.fillStyle = colors.muted;
+          ctx.fillText(label, end.x + (dx >= 0 ? 4 : -12), end.y + (dy >= 0 ? 10 : -3));
+        });
+      }
+
+      function drawSurface(width, height) {
+        const project = surfaceProject(width, height);
+        const n = width < 560 ? 18 : 24;
+        const step = DOMAIN * 2 / n;
+        const cells = [];
+        for (let ix = 0; ix < n; ix++) {
+          for (let iy = 0; iy < n; iy++) {
+            const x0 = -DOMAIN + ix * step;
+            const y0 = -DOMAIN + iy * step;
+            const x1 = x0 + step;
+            const y1 = y0 + step;
+            const values = [loss([x0, y0]), loss([x1, y0]), loss([x1, y1]), loss([x0, y1])];
+            const points = [project(x0, y0, values[0]), project(x1, y0, values[1]), project(x1, y1, values[2]), project(x0, y1, values[3])];
+            cells.push({ points, value: values.reduce((a, b) => a + b, 0) / 4, depth: points.reduce((a, p) => a + p.depth, 0) / 4 });
+          }
+        }
+        cells.sort((a, b) => a.depth - b.depth);
+        cells.forEach((cell) => {
+          ctx.beginPath();
+          ctx.moveTo(cell.points[0].x, cell.points[0].y);
+          cell.points.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+          ctx.closePath();
+          ctx.fillStyle = surfaceColor(cell.value, 0.46);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(46,43,37,0.105)";
+          ctx.lineWidth = 0.65;
+          ctx.stroke();
+        });
+
+        drawAxisTriad(width, height);
+
+        const trajectory = state.path
+          .filter((p) => Math.abs(p[0]) <= DOMAIN * 1.2 && Math.abs(p[1]) <= DOMAIN * 1.2)
+          .map((p) => ({ model: p, screen: project(p[0], p[1], loss(p) + 0.045) }));
+        drawTrajectory(trajectory);
+
+        MINIMA.forEach((p) => pointMark(project(p[0], p[1], loss(p) + 0.06), colors.green, 5, true));
+        const current = project(state.point[0], state.point[1], loss(state.point) + 0.08);
+        pointMark(current, colors.ink, 5.5);
+
+        if (state.outcome !== "diverged") {
+          const { gradient: g, delta } = candidateUpdate();
+          const gNorm = Math.max(magnitude(g), 0.0001);
+          const gradEnd = [state.point[0] + g[0] / gNorm * 0.55, state.point[1] + g[1] / gNorm * 0.55];
+          const dNorm = Math.max(magnitude(delta), 0.0001);
+          const dScale = Math.min(1, 1.05 / dNorm);
+          const updateEnd = [state.point[0] + delta[0] * dScale, state.point[1] + delta[1] * dScale];
+          arrow(current, project(gradEnd[0], gradEnd[1], loss(state.point) + 0.08), colors.violet, 2);
+          arrow(current, project(updateEnd[0], updateEnd[1], loss(updateEnd) + 0.08), colors.accent, 2.4);
+        }
+      }
+
+      /* ================= 2D contours ================= */
+      function contourMap(width, height) {
+        const pad = Math.max(34, Math.min(width, height) * 0.075);
+        const size = Math.min(width - pad * 2, height - pad * 2);
+        const left = (width - size) / 2;
+        const top = (height - size) / 2;
+        return {
+          left, top, size,
+          toScreen: ([x, y]) => ({ x: left + (x + DOMAIN) / (DOMAIN * 2) * size, y: top + (DOMAIN - y) / (DOMAIN * 2) * size }),
+          toModel: ({ x, y }) => [clamp((x - left) / size * DOMAIN * 2 - DOMAIN, -DOMAIN, DOMAIN), clamp(DOMAIN - (y - top) / size * DOMAIN * 2, -DOMAIN, DOMAIN)]
+        };
+      }
+
+      function drawContours(width, height) {
+        const map = contourMap(width, height);
+        const n = width < 560 ? 42 : 58;
+        const cell = map.size / n;
+        const values = Array.from({ length: n + 1 }, (_, iy) => Array.from({ length: n + 1 }, (_, ix) => {
+          const x = -DOMAIN + ix / n * DOMAIN * 2;
+          const y = DOMAIN - iy / n * DOMAIN * 2;
+          return loss([x, y]);
+        }));
+
+        for (let iy = 0; iy < n; iy++) {
+          for (let ix = 0; ix < n; ix++) {
+            const value = (values[iy][ix] + values[iy][ix + 1] + values[iy + 1][ix + 1] + values[iy + 1][ix]) / 4;
+            ctx.fillStyle = surfaceColor(value, 0.34);
+            ctx.fillRect(map.left + ix * cell, map.top + iy * cell, cell + 0.7, cell + 0.7);
+          }
+        }
+
+        const levels = [0, 0.25, 0.6, 1.2, 2.2, 3.8, 6.2];
+        levels.forEach((level, li) => {
+          ctx.beginPath();
+          for (let iy = 0; iy < n; iy++) {
+            for (let ix = 0; ix < n; ix++) {
+              const x = map.left + ix * cell;
+              const y = map.top + iy * cell;
+              const corners = [values[iy][ix], values[iy][ix + 1], values[iy + 1][ix + 1], values[iy + 1][ix]];
+              const pts = [{ x, y }, { x: x + cell, y }, { x: x + cell, y: y + cell }, { x, y: y + cell }];
+              const hits = [];
+              for (let edge = 0; edge < 4; edge++) {
+                const next = (edge + 1) % 4;
+                const a = corners[edge];
+                const b = corners[next];
+                if ((a < level) !== (b < level)) {
+                  const t = (level - a) / (b - a);
+                  hits.push({ x: pts[edge].x + (pts[next].x - pts[edge].x) * t, y: pts[edge].y + (pts[next].y - pts[edge].y) * t });
+                }
+              }
+              if (hits.length >= 2) {
+                ctx.moveTo(hits[0].x, hits[0].y);
+                ctx.lineTo(hits[1].x, hits[1].y);
+                if (hits.length === 4) { ctx.moveTo(hits[2].x, hits[2].y); ctx.lineTo(hits[3].x, hits[3].y); }
+              }
+            }
+          }
+          ctx.strokeStyle = li === 0 ? colors.violet : "rgba(46,43,37,0.34)";
+          ctx.lineWidth = li === 0 ? 1.5 : 0.8;
+          ctx.stroke();
+        });
+
+        ctx.strokeStyle = colors.lineStrong;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(map.left, map.top, map.size, map.size);
+        ctx.fillStyle = colors.muted;
+        ctx.font = "500 11px ui-monospace, monospace";
+        ctx.fillText("w₁", map.left + map.size + 7, map.top + map.size + 3);
+        ctx.fillText("w₂", map.left - 5, map.top - 8);
+
+        const trajectory = state.path
+          .filter((p) => Math.abs(p[0]) <= DOMAIN * 1.2 && Math.abs(p[1]) <= DOMAIN * 1.2)
+          .map((p) => ({ model: p, screen: map.toScreen(p) }));
+        drawTrajectory(trajectory);
+        MINIMA.forEach((p) => pointMark(map.toScreen(p), colors.green, 5, true));
+        const current = map.toScreen(state.point);
+        pointMark(current, colors.ink, 5.5);
+
+        if (state.outcome !== "diverged") {
+          const { gradient: g, delta } = candidateUpdate();
+          const gNorm = Math.max(magnitude(g), 0.0001);
+          const gradEnd = [state.point[0] + g[0] / gNorm * 0.55, state.point[1] + g[1] / gNorm * 0.55];
+          const dNorm = Math.max(magnitude(delta), 0.0001);
+          const dScale = Math.min(1, 1.05 / dNorm);
+          const updateEnd = [state.point[0] + delta[0] * dScale, state.point[1] + delta[1] * dScale];
+          arrow(current, map.toScreen(gradEnd), colors.violet, 2);
+          arrow(current, map.toScreen(updateEnd), colors.accent, 2.4);
+        }
+      }
+
+      function draw() {
+        const { width, height } = canvasSize();
+        clear(width, height);
+        if (state.view === "surface") drawSurface(width, height);
+        else drawContours(width, height);
+      }
+
+      /* ================= DOM rendering ================= */
+      function updateAll() {
+        const currentLoss = loss(state.point);
+        const { gradient: g, delta, next } = candidateUpdate();
+        $("#loss-reading").textContent = fmt(currentLoss, 3);
+        $("#gradient-reading").textContent = fmt(magnitude(g), 3);
+        $("#step-reading").textContent = String(state.step);
+        $("#delta-reading").textContent = fmt(magnitude(delta), 3);
+        $("#parameter-reading").textContent = `w = [${fmt(state.point[0])}, ${fmt(state.point[1])}]`;
+        $("#update-reading").textContent = `next = [${fmt(next[0])}, ${fmt(next[1])}]`;
+
+        const chip = $("#status-chip");
+        chip.dataset.state = state.outcome;
+        const labels = { ready: "Ready", stepped: "One step computed", running: "Running", converged: "Converged", diverged: "Diverged" };
+        chip.textContent = labels[state.outcome];
+        const messages = {
+          ready: "<strong>Ready.</strong> Press Step once to separate the gradient from the update.",
+          stepped: "<strong>Update applied.</strong> The new point becomes the input to the same rule.",
+          running: "<strong>Following −η∇L.</strong> Watch whether the loss settles, oscillates, or grows.",
+          converged: "<strong>Converged.</strong> The gradient norm fell below 0.015 — the surface is locally flat.",
+          diverged: "<strong>Diverged.</strong> The parameters or loss escaped the visible landscape. Lower η and reset."
+        };
+        $("#stage-status").innerHTML = messages[state.outcome];
+        canvas.setAttribute("aria-label", `${state.view === "surface" ? "Three-dimensional loss surface" : "Two-dimensional contour map"}. Step ${state.step}; w1 ${fmt(state.point[0], 2)}, w2 ${fmt(state.point[1], 2)}, loss ${fmt(currentLoss, 3)}, gradient norm ${fmt(magnitude(g), 3)}. ${labels[state.outcome]}.`);
+        draw();
+      }
+
+      function syncControls() {
+        $("#rate").value = String(state.eta);
+        $("#rate-value").textContent = state.eta.toFixed(2);
+        $("#speed").value = String(state.speed);
+        $("#speed-value").textContent = String(state.speed);
+        $("#start-x").value = String(state.start[0]);
+        $("#start-y").value = String(state.start[1]);
+        $("#start-x-value").textContent = state.start[0].toFixed(2);
+        $("#start-y-value").textContent = state.start[1].toFixed(2);
+        document.querySelectorAll("[data-rate]").forEach((button) => button.setAttribute("aria-pressed", String(Math.abs(Number(button.dataset.rate) - state.eta) < 0.0001)));
+        $("#preset-note").textContent = PRESET_COPY.get(state.eta) || "Custom · inspect the path rather than trusting the number.";
+      }
+
+      /* ================= Interaction ================= */
+      document.querySelectorAll("[data-rate]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.eta = Number(button.dataset.rate);
+          syncControls();
+          reset();
+        });
+      });
+
+      $("#rate").addEventListener("input", (event) => {
+        state.eta = Number(event.target.value);
+        syncControls();
+        reset();
+      });
+      $("#speed").addEventListener("input", (event) => {
+        state.speed = Number(event.target.value);
+        syncControls();
+      });
+      ["x", "y"].forEach((axis, index) => {
+        $(`#start-${axis}`).addEventListener("input", (event) => {
+          state.start[index] = Number(event.target.value);
+          syncControls();
+          reset(state.start);
+        });
+      });
+
+      $("#run").addEventListener("click", () => {
+        if (state.outcome === "converged" || state.outcome === "diverged") reset();
+        state.running = !state.running;
+        state.outcome = state.running ? "running" : "stepped";
+        $("#run").setAttribute("aria-pressed", String(state.running));
+        $("#run").textContent = state.running ? "Pause" : "Run";
+        state.lastTick = 0;
+        updateAll();
+        if (state.running) requestAnimationFrame(schedule);
+      });
+      $("#step").addEventListener("click", () => {
+        stop(state.outcome === "ready" ? "ready" : "stepped");
+        stepOnce();
+      });
+      $("#reset").addEventListener("click", () => reset());
+
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.view = button.dataset.view;
+          document.querySelectorAll("[data-view]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+          $("#stage-help").textContent = state.view === "surface" ? "Drag or use arrow keys to rotate · switch to contours for a top-down path" : "Click the map to choose a new starting point · both rings are equal minima";
+          canvas.style.cursor = state.view === "surface" ? "grab" : "crosshair";
+          $("#reset-view").disabled = state.view !== "surface";
+          draw();
+        });
+      });
+
+      $("#reset-view").addEventListener("click", () => {
+        state.yaw = DEFAULT_CAMERA.yaw;
+        state.pitch = DEFAULT_CAMERA.pitch;
+        state.surfaceView = null;
+        draw();
+      });
+
+      let pointer = null;
+      canvas.addEventListener("pointerdown", (event) => {
+        pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
+        canvas.setPointerCapture(event.pointerId);
+        if (state.view === "surface") canvas.classList.add("dragging");
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        if (!pointer || pointer.id !== event.pointerId || state.view !== "surface") return;
+        const dx = event.clientX - pointer.x;
+        const dy = event.clientY - pointer.y;
+        if (Math.abs(dx) + Math.abs(dy) > 2) pointer.moved = true;
+        state.yaw += dx * 0.008;
+        state.pitch = clamp(state.pitch + dy * 0.006, 0.32, 0.98);
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+        draw();
+      });
+      canvas.addEventListener("pointerup", (event) => {
+        if (!pointer || pointer.id !== event.pointerId) return;
+        if (state.view === "contours" && !pointer.moved) {
+          const rect = canvas.getBoundingClientRect();
+          const map = contourMap(rect.width, rect.height);
+          const chosen = map.toModel({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+          state.start = chosen;
+          syncControls();
+          reset(chosen);
+        }
+        canvas.classList.remove("dragging");
+        pointer = null;
+      });
+      canvas.addEventListener("pointercancel", () => { canvas.classList.remove("dragging"); pointer = null; });
+      canvas.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+        if (event.key === "ArrowLeft") state.yaw -= 0.1;
+        if (event.key === "ArrowRight") state.yaw += 0.1;
+        if (event.key === "ArrowUp") state.pitch = clamp(state.pitch - 0.08, 0.32, 0.98);
+        if (event.key === "ArrowDown") state.pitch = clamp(state.pitch + 0.08, 0.32, 0.98);
+        draw();
+        event.preventDefault();
+      });
+
+      if ("ResizeObserver" in window) new ResizeObserver(draw).observe(canvas.parentElement);
+      else window.addEventListener("resize", draw, { passive: true });
+
+      syncControls();
+      updateAll();
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries. The surface and contours use the native Canvas 2D API. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>

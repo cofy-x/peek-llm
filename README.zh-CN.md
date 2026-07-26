@@ -31,6 +31,10 @@ Peek LLM 是一个开源的大模型交互知识可视化项目。它不要求�
 - [Logits &amp; Sampling](logits-and-sampling/index.html) — 由 [Sampling Studio](logits-and-sampling/sampling-studio.html) 开启：基于真实 GPT-2 下一 token logits 的概率轮盘工作台，支持 temperature、top-k 与 top-p 调节。
 - KV Cache — 开发中。
 
+训练系列从让模型能够学习的参数更新规则开始：
+
+- [Gradient Descent](gradient-descent/index.html) — 由 [Gradient Descent Studio](gradient-descent/gradient-descent-studio.html) 开启：使用原生 Canvas 呈现计算生成的 3D 损失曲面、俯视等高线视图，以及从收敛到发散的学习率实验。
+
 ## 本地检查
 
 ```bash

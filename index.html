@@ -174,6 +174,10 @@
 
     .section { padding-top: 86px; }
     .section h2 { margin: 0; max-width: 700px; font-family: var(--font-serif); font-weight: 700; font-size: clamp(30px, 4.5vw, 46px); line-height: 1.02; letter-spacing: -0.01em; }
+    .collection-intro { margin-top: 62px; padding-top: 28px; border-top: 1px solid var(--line); }
+    .collection-intro .eyebrow { margin-bottom: 8px; }
+    .collection-intro h3 { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: clamp(26px, 3.8vw, 38px); line-height: 1.05; letter-spacing: -0.01em; }
+    .collection-intro p:last-child { max-width: 660px; margin: 10px 0 0; color: var(--muted); }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
     .concept-grid { grid-template-columns: repeat(2, 1fr); }
     .card { min-height: 214px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
@@ -282,6 +286,19 @@
             <p>How the model turns 50,257 scores into one token — bend real GPT-2 logits with temperature, top-k, and top-p, then throw the dart.</p>
           </a>
         </div>
+
+        <div class="collection-intro" id="training">
+          <p class="eyebrow">Training collection</p>
+          <h3>See how the model learns.</h3>
+          <p>Before a model can predict the next token, optimization has to turn error into millions of small parameter updates. Start with the rule underneath that process.</p>
+        </div>
+        <div class="grid concept-grid">
+          <a class="card concept" href="gradient-descent/index.html">
+            <small>Training 01 · New</small>
+            <h3>Gradient Descent</h3>
+            <p>Follow a point down a computed loss landscape, inspect one update, and push the learning rate from cautious convergence into overshoot and divergence.</p>
+          </a>
+        </div>
       </section>
 
       <section class="section" id="principles" aria-labelledby="principles-title">
@@ -297,7 +314,7 @@
 
     <footer>
       <span>Peek LLM · An open-source Cofy-X project</span>
-      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="attention/index.html">Concept 03: Attention</a> · <a href="logits-and-sampling/index.html">Concept 04: Logits &amp; Sampling</a></span>
+      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="attention/index.html">Concept 03: Attention</a> · <a href="logits-and-sampling/index.html">Concept 04: Logits &amp; Sampling</a> · <a href="gradient-descent/index.html">Training 01: Gradient Descent</a></span>
     </footer>
   </div>
 
