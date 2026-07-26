@@ -290,13 +290,18 @@
         <div class="collection-intro" id="training">
           <p class="eyebrow">Training collection</p>
           <h3>See how the model learns.</h3>
-          <p>Before a model can predict the next token, optimization has to turn error into millions of small parameter updates. Start with the rule underneath that process.</p>
+          <p>Training alternates between computing a prediction and changing the parameters that produced it. Explore the update rule, then trace the forward computation it improves.</p>
         </div>
         <div class="grid concept-grid">
           <a class="card concept" href="gradient-descent/index.html">
-            <small>Training 01 · New</small>
+            <small>Training 01</small>
             <h3>Gradient Descent</h3>
             <p>Follow a point down a computed loss landscape, inspect one update, and push the learning rate from cautious convergence into overshoot and divergence.</p>
+          </a>
+          <a class="card concept" href="forward-pass/index.html">
+            <small>Training 02 · New</small>
+            <h3>Forward Pass</h3>
+            <p>Shape a tiny hidden state, follow every weighted contribution through ReLU, and watch three token logits become one probability distribution.</p>
           </a>
         </div>
       </section>
@@ -314,7 +319,7 @@
 
     <footer>
       <span>Peek LLM · An open-source Cofy-X project</span>
-      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="attention/index.html">Concept 03: Attention</a> · <a href="logits-and-sampling/index.html">Concept 04: Logits &amp; Sampling</a> · <a href="gradient-descent/index.html">Training 01: Gradient Descent</a></span>
+      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="attention/index.html">Concept 03: Attention</a> · <a href="logits-and-sampling/index.html">Concept 04: Logits &amp; Sampling</a> · <a href="gradient-descent/index.html">Training 01: Gradient Descent</a> · <a href="forward-pass/index.html">Training 02: Forward Pass</a></span>
     </footer>
   </div>
 

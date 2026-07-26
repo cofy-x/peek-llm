@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive Peek LLM studio for tracing a computed tiny MLP through linear sums, ReLU activations, token logits, and softmax probabilities. Self-contained HTML, works offline.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
+  <title>Forward Pass Studio — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
+      --amber: #b45309;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --radius: 6px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; line-height: 1.55; overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--bg); }
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
+    #network [tabindex],
+    #network [tabindex]:focus,
+    #network [tabindex]:focus-visible { outline: none !important; }
+
+    /* ================= Chrome and workbench ================= */
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+    .workbench { display: grid; grid-template-columns: 286px minmax(0, 1fr) 330px; min-height: 0; }
+    aside, .stage { min-height: 0; overflow-y: auto; }
+    .rail { padding: 16px 20px 20px; }
+    .rail-left { border-right: 1px solid var(--line); }
+    .rail-right { border-left: 1px solid var(--line); }
+    .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .pane-label { display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px; background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink); }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
+    .stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; overflow: hidden; padding: 16px 24px 14px; }
+    .stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .phase-track { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .phase-chip { padding: 4px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); font: 500 10.5px var(--font-mono); letter-spacing: 0.04em; }
+    .phase-chip.done { color: var(--ink-subtle); border-color: var(--line-strong); }
+    .phase-chip.current { color: var(--accent-ink); border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+    .frame { position: relative; min-height: 0; border: 1px solid var(--line); background: linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px, var(--panel); background-repeat: no-repeat; }
+    .network-wrap { min-height: 390px; height: 100%; position: relative; }
+    .network-wrap::before { content: "COMPUTED TEACHING NETWORK · 4 → 3 → 3"; position: absolute; left: 18px; top: 14px; z-index: 1; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; }
+    #network { display: block; width: 100%; height: 100%; min-height: 390px; }
+    .stage-caption { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 12.5px; }
+    .stage-caption strong { color: var(--ink-soft); font-weight: 600; }
+    button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: 600 12px/1 inherit; font-family: inherit; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    button:hover { border-color: var(--ink); }
+    button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .preset[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
+    .hint { margin: 12px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
+
+    /* ================= Inputs and readings ================= */
+    .slider-row { margin-top: 13px; }
+    .slider-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .slider-head label { color: var(--ink-subtle); font-size: 13px; }
+    .slider-head output { color: var(--ink-soft); font: 600 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; height: 20px; margin: 3px 0 0; accent-color: var(--accent); }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font: 500 10px var(--font-mono); }
+    .legend { display: grid; gap: 8px; color: var(--ink-subtle); font-size: 12.5px; }
+    .legend span { display: flex; align-items: center; gap: 8px; }
+    .legend i { display: inline-block; width: 28px; height: 2px; background: var(--blue); }
+    .legend .negative { background: var(--rose); }
+    .legend .magnitude { height: 5px; background: var(--muted); }
+    .status-line { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-subtle); font-size: 13px; }
+    .status-line::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .status-line.complete::before { background: var(--green); }
+    .distribution { display: grid; gap: 10px; }
+    .token-row { display: grid; grid-template-columns: 66px minmax(0, 1fr) 48px; gap: 9px; align-items: center; }
+    .token-row .token { color: var(--ink-soft); font: 600 13px var(--font-mono); }
+    .token-row .track { display: block; height: 8px; overflow: hidden; border-radius: 99px; background: rgba(46, 43, 37, 0.08); }
+    .token-row .fill { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width 420ms var(--ease); }
+    .token-row .value { color: var(--muted); text-align: right; font: 500 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+    .token-row.top .token, .token-row.top .value { color: var(--ink); }
+    .token-row.top .fill { background: var(--green); }
+    .inspector-focus { margin: 0 0 4px; color: var(--ink); font: 600 18px/1.25 var(--font-mono); }
+    .inspector-reading { margin: 0; color: var(--ink-soft); font: 600 16px/1.35 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .inspector-meta { margin: 4px 0 0; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .inspector-copy { margin: 11px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .inspector-copy strong { color: var(--ink-soft); font-weight: 600; }
+    .formula-box { margin-top: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow-x: auto; }
+    .formula-box math { display: block; font-family: var(--font-serif); font-size: 18px; }
+    .calculation { margin: 10px 0 0; color: var(--ink-soft); font: 500 11.5px/1.6 var(--font-mono); overflow-wrap: anywhere; }
+    .contrib-list { display: grid; gap: 5px; margin-top: 10px; }
+    .contrib-head { display: grid; grid-template-columns: 34px 50px 1fr; gap: 7px; margin-top: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .contrib-head span:nth-child(2), .contrib-head span:nth-child(3) { text-align: right; }
+    .contrib-row { display: grid; grid-template-columns: 34px 50px 1fr; gap: 7px; color: var(--muted); font: 500 11px var(--font-mono); }
+    .contrib-row b { color: var(--ink-soft); font-weight: 600; text-align: right; }
+    .source-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+    .source-list li + li { margin-top: 6px; }
+
+    /* ================= SVG network ================= */
+    .layer-label { fill: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-anchor: middle; }
+    .layer-rule { stroke: var(--line); stroke-width: 1; }
+    .edge { cursor: pointer; }
+    .edge .hit { stroke: transparent; stroke-width: 15; }
+    .edge .wire { fill: none; stroke-linecap: round; transition: opacity 250ms var(--ease), stroke-width 250ms var(--ease); }
+    .edge.positive .wire { stroke: var(--blue); }
+    .edge.negative .wire { stroke: var(--rose); }
+    .edge.future .wire { opacity: 0.12 !important; }
+    .edge.available .wire { opacity: 0.46; }
+    .edge.active .wire { opacity: 0.95; stroke-dasharray: 9 7; animation: signal-flow 850ms linear infinite; }
+    .edge.selected .wire { opacity: 1; }
+    .edge.selected .selection-wire { stroke: var(--accent); opacity: 1; }
+    .selection-wire { fill: none; opacity: 0; pointer-events: none; }
+    body.keyboard-nav .edge:focus .wire { opacity: 1 !important; }
+    .node { cursor: pointer; }
+    .node circle { fill: var(--panel); stroke: var(--line-strong); stroke-width: 1.5; transition: opacity 240ms var(--ease), stroke 240ms var(--ease), fill 240ms var(--ease), transform 240ms var(--ease); transform-box: fill-box; transform-origin: center; }
+    .node .node-id { fill: var(--ink-soft); font-family: var(--font-mono); font-size: 14px; font-weight: 600; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    .node .node-value { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+    .node .node-caption { fill: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+    .node.future circle, .node.future text { opacity: 0.28; }
+    .node.available circle { stroke: var(--line-strong); }
+    .node.current circle { stroke: var(--accent); fill: var(--accent-wash); transform: scale(1.06); }
+    .node.complete circle { stroke: var(--line-strong); }
+    .node.winner circle { stroke: var(--green); fill: rgba(74, 124, 67, 0.07); stroke-width: 2.2; }
+    .node.selected circle { stroke: var(--violet); stroke-width: 2.5; }
+    body.keyboard-nav .node:focus circle { stroke: var(--accent); stroke-width: 2.5; }
+    @keyframes signal-flow { to { stroke-dashoffset: -32; } }
+
+    @media (max-width: 1100px) { .workbench { grid-template-columns: 260px minmax(0, 1fr) 300px; } .rail { padding-inline: 16px; } .stage { padding-inline: 16px; } }
+    @media (max-width: 900px) {
+      body { overflow: auto; display: block; }
+      .workbench { grid-template-columns: 1fr; }
+      aside, .stage { overflow: visible; }
+      .rail-left, .rail-right { border: 0; }
+      .rail-left { border-bottom: 1px solid var(--line); }
+      .rail-right { border-top: 1px solid var(--line); }
+      .stage { min-height: 600px; }
+      .network-wrap, #network { min-height: 470px; }
+    }
+    @media (max-width: 560px) { header.top > .label { display: none; } .stage { padding-inline: 10px; } .network-wrap, #network { min-height: 420px; } .stage-caption { flex-direction: column; gap: 2px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Forward Pass</a>
+    </div>
+    <p class="label">Studio · Computed tiny MLP</p>
+    <p class="fig-no">Fig. 1</p>
+  </header>
+
+  <div class="workbench">
+    <aside class="rail rail-left" aria-labelledby="controls-title">
+      <section>
+        <h2 class="pane-label" id="controls-title">Hidden-state input</h2>
+        <div class="button-grid" aria-label="Input presets">
+          <button class="preset" type="button" data-preset="context" aria-pressed="true">Context</button>
+          <button class="preset" type="button" data-preset="contrast" aria-pressed="false">Contrast</button>
+          <button class="preset" type="button" data-preset="quiet" aria-pressed="false">Quiet</button>
+          <button class="preset" type="button" data-preset="flipped" aria-pressed="false">Flipped</button>
+        </div>
+        <p class="hint"><b>Start here.</b> Choose a preset, then step the four activations through the network.</p>
+        <div id="sliders"></div>
+      </section>
+      <section>
+        <h2 class="pane-label">Trace the pass</h2>
+        <div class="button-row">
+          <button class="primary" id="run" type="button">Run</button>
+          <button id="step" type="button">Step</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <p class="hint">Run plays the whole pass. Step pauses at every operation; press <b>Space</b> to advance.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Read the wires</h2>
+        <div class="legend">
+          <span><i></i> positive weight</span>
+          <span><i class="negative"></i> negative weight</span>
+          <span><i class="magnitude"></i> thicker = larger |weight|</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-toolbar">
+        <p class="status-line" id="status" aria-live="polite">Input activations are ready.</p>
+        <div class="phase-track" id="phase-track" aria-label="Forward pass stages"></div>
+      </div>
+      <section class="frame network-wrap" aria-label="Tiny MLP network diagram">
+        <svg id="network" viewBox="0 0 760 500" role="group" aria-labelledby="network-title network-desc">
+          <title id="network-title">A computed four by three by three neural network</title>
+          <desc id="network-desc">Four input activations connect to three ReLU neurons, which connect to three candidate token outputs. Select a neuron or wire to inspect its calculation.</desc>
+          <g id="layer-guides" aria-hidden="true"></g>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </section>
+      <div class="stage-caption">
+        <span><strong id="caption-lead">Input.</strong> Four values stand in for one tiny hidden state.</span>
+        <span>Select any node or wire to inspect it.</span>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-labelledby="inspector-title">
+      <section>
+        <h2 class="pane-label">Token distribution</h2>
+        <div class="distribution" id="distribution"></div>
+        <p class="hint" id="distribution-note">Probabilities appear after softmax.</p>
+      </section>
+      <section>
+        <h2 class="pane-label" id="inspector-title">Selected unit</h2>
+        <p class="inspector-focus" id="selection-title">hidden h₁</p>
+        <p class="inspector-reading" id="selection-reading">waiting for linear sum</p>
+        <p class="inspector-meta" id="selection-meta">ReLU neuron</p>
+        <p class="inspector-copy" id="selection-copy"><strong>Weighted sum.</strong> Every incoming activation is scaled, added, and shifted by a bias.</p>
+        <div class="formula-box">
+          <math display="block" aria-label="z sub j equals the sum over i of w sub j i times x sub i plus b sub j" data-tex="z_j = \\sum_i w_{ji}x_i + b_j">
+            <mrow><msub><mi>z</mi><mi>j</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mrow><mi>j</mi><mi>i</mi></mrow></msub><msub><mi>x</mi><mi>i</mi></msub><mo>+</mo><msub><mi>b</mi><mi>j</mi></msub></mrow>
+          </math>
+        </div>
+        <p class="calculation" id="calculation"></p>
+        <div class="contrib-head" id="contrib-head" aria-hidden="true"><span>source</span><span>weight</span><span>result</span></div>
+        <div class="contrib-list" id="contributions"></div>
+      </section>
+      <section>
+        <h2 class="pane-label">What is computed</h2>
+        <p class="inspector-copy"><strong>Teaching network.</strong> The weights are fixed by hand so every number is reproducible. This is not a trace from a trained language model.</p>
+        <div class="formula-box">
+          <math display="block" aria-label="h equals ReLU of z, and p sub k equals exponential l sub k divided by the sum of exponential logits" data-tex="h=\\operatorname{ReLU}(z),\\quad p_k=\\frac{e^{\\ell_k}}{\\sum_m e^{\\ell_m}}">
+            <mrow><mi>h</mi><mo>=</mo><mi mathvariant="normal">ReLU</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>,</mo><mspace width="1em"/><msub><mi>p</mi><mi>k</mi></msub><mo>=</mo><mfrac><msup><mi>e</mi><msub><mi>ℓ</mi><mi>k</mi></msub></msup><mrow><munder><mo>∑</mo><mi>m</mi></munder><msup><mi>e</mi><msub><mi>ℓ</mi><mi>m</mi></msub></msup></mrow></mfrac></mrow>
+          </math>
+        </div>
+      </section>
+      <section>
+        <h2 class="pane-label">Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://d2l.ai/chapter_multilayer-perceptrons/mlp.html" rel="noreferrer">Dive into Deep Learning · Multilayer Perceptrons</a></li>
+          <li><a href="https://www.deeplearningbook.org/contents/mlp.html" rel="noreferrer">Deep Learning · Deep Feedforward Networks</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const PHASES = ["input", "linear", "ReLU", "logits", "softmax"];
+      const TOKENS = ["river", "street", "garden"];
+      const PRESETS = {
+        context: [0.80, -0.30, 0.65, 0.20],
+        contrast: [-0.50, 0.85, 0.25, -0.60],
+        quiet: [0.15, 0.05, -0.20, 0.35],
+        flipped: [-0.80, -0.60, -0.80, 0.90]
+      };
+      const W1 = [
+        [0.80, -0.40, 0.60, 0.20],
+        [-0.30, 0.90, 0.20, -0.50],
+        [0.40, 0.10, -0.70, 0.80]
+      ];
+      const B1 = [0.10, 0.05, -0.10];
+      const W2 = [
+        [0.90, -0.20, 0.40],
+        [-0.30, 0.80, 0.50],
+        [0.20, 0.40, 0.90]
+      ];
+      const B2 = [0.05, -0.05, 0.10];
+      const POSITIONS = {
+        input: [[95, 90], [95, 195], [95, 305], [95, 410]],
+        hidden: [[375, 130], [375, 250], [375, 370]],
+        output: [[665, 130], [665, 250], [665, 370]]
+      };
+      const state = {
+        x: [...PRESETS.context], phase: 0, preset: "context", running: false,
+        timers: [], selection: { type: "node", layer: "hidden", index: 0 }
+      };
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      function compute() {
+        const z = W1.map((row, j) => row.reduce((sum, w, i) => sum + w * state.x[i], B1[j]));
+        const h = z.map(value => Math.max(0, value));
+        const logits = W2.map((row, k) => row.reduce((sum, w, j) => sum + w * h[j], B2[k]));
+        const ceiling = Math.max(...logits);
+        const exps = logits.map(value => Math.exp(value - ceiling));
+        const denom = exps.reduce((sum, value) => sum + value, 0);
+        const probabilities = exps.map(value => value / denom);
+        return { z, h, logits, probabilities };
+      }
+
+      function fmt(value, digits = 2) {
+        const clean = Math.abs(value) < 0.0005 ? 0 : value;
+        return `${clean >= 0 ? "+" : "−"}${Math.abs(clean).toFixed(digits)}`;
+      }
+
+      function svgElement(name, attributes = {}) {
+        const element = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+        return element;
+      }
+
+      function buildControls() {
+        const sliders = $("#sliders");
+        state.x.forEach((value, index) => {
+          const row = document.createElement("div");
+          row.className = "slider-row";
+          row.innerHTML = `<div class="slider-head"><label for="x-${index}">activation x<sub>${index + 1}</sub></label><output id="x-${index}-out" for="x-${index}">${fmt(value)}</output></div><input id="x-${index}" type="range" min="-1" max="1" step="0.05" value="${value}" aria-label="Input activation x ${index + 1}"><div class="range-ends"><span>−1.00</span><span>+1.00</span></div>`;
+          sliders.append(row);
+          row.querySelector("input").addEventListener("input", event => {
+            stopRun();
+            state.x[index] = Number(event.target.value);
+            state.preset = null;
+            state.phase = 0;
+            updatePresetButtons();
+            render();
+          });
+        });
+        $$(".preset").forEach(button => button.addEventListener("click", () => applyPreset(button.dataset.preset)));
+        $("#run").addEventListener("click", run);
+        $("#step").addEventListener("click", step);
+        $("#reset").addEventListener("click", () => applyPreset("context"));
+        document.addEventListener("keydown", event => {
+          if (event.defaultPrevented) return;
+          if (event.code === "Space" && !event.repeat && event.target.tagName !== "INPUT" && event.target.tagName !== "BUTTON") {
+            event.preventDefault();
+            step();
+          }
+        });
+      }
+
+      function buildPhaseTrack() {
+        PHASES.forEach((phase, index) => {
+          const chip = document.createElement("span");
+          chip.className = "phase-chip";
+          chip.dataset.phase = index;
+          chip.textContent = `${index + 1} ${phase}`;
+          $("#phase-track").append(chip);
+        });
+      }
+
+      function buildDistribution() {
+        TOKENS.forEach((token, index) => {
+          const row = document.createElement("div");
+          row.className = "token-row";
+          row.dataset.token = index;
+          row.innerHTML = `<span class="token">${token}</span><span class="track"><span class="fill"></span></span><span class="value">—</span>`;
+          $("#distribution").append(row);
+        });
+      }
+
+      function buildNetwork() {
+        const guides = $("#layer-guides");
+        [[95, "INPUT x"], [375, "MLP · ReLU"], [665, "TOKEN OUTPUT"]].forEach(([x, label]) => {
+          const text = svgElement("text", { x, y: 44, class: "layer-label" });
+          text.textContent = label;
+          guides.append(text);
+          guides.append(svgElement("line", { x1: x - 48, y1: 55, x2: x + 48, y2: 55, class: "layer-rule" }));
+        });
+        W1.forEach((weights, to) => weights.forEach((weight, from) => createEdge("input", from, "hidden", to, weight, 1)));
+        W2.forEach((weights, to) => weights.forEach((weight, from) => createEdge("hidden", from, "output", to, weight, 3)));
+        POSITIONS.input.forEach((_, index) => createNode("input", index));
+        POSITIONS.hidden.forEach((_, index) => createNode("hidden", index));
+        POSITIONS.output.forEach((_, index) => createNode("output", index));
+      }
+
+      function createEdge(fromLayer, from, toLayer, to, weight, phase) {
+        const [x1, y1] = POSITIONS[fromLayer][from];
+        const [x2, y2] = POSITIONS[toLayer][to];
+        const fromRadius = fromLayer === "input" ? 27 : 31;
+        const toRadius = toLayer === "input" ? 27 : 31;
+        const width = 1.1 + Math.abs(weight) * 3.7;
+        const capClearance = (width + 4) / 2 + 1;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.hypot(dx, dy);
+        const ux = dx / distance;
+        const uy = dy / distance;
+        const startX = x1 + ux * (fromRadius + capClearance);
+        const startY = y1 + uy * (fromRadius + capClearance);
+        const endX = x2 - ux * (toRadius + capClearance);
+        const endY = y2 - uy * (toRadius + capClearance);
+        const group = svgElement("g", {
+          class: `edge ${weight >= 0 ? "positive" : "negative"}`,
+          tabindex: "0", role: "button",
+          "aria-label": `${fromLayer} ${from + 1} to ${toLayer} ${to + 1}, weight ${weight.toFixed(2)}`,
+          "data-from-layer": fromLayer, "data-from": from, "data-to-layer": toLayer, "data-to": to, "data-weight": weight, "data-phase": phase
+        });
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "hit" }));
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "selection-wire", "stroke-width": width + 4 }));
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "wire", "stroke-width": width }));
+        group.addEventListener("mousedown", event => event.preventDefault());
+        group.addEventListener("click", () => {
+          selectEdge(fromLayer, from, toLayer, to, weight);
+          if (!document.body.classList.contains("keyboard-nav") && typeof group.blur === "function") group.blur();
+        });
+        group.addEventListener("keydown", event => activateWithKeyboard(event, () => selectEdge(fromLayer, from, toLayer, to, weight)));
+        $("#edges").append(group);
+      }
+
+      function createNode(layer, index) {
+        const [x, y] = POSITIONS[layer][index];
+        const group = svgElement("g", { class: "node", transform: `translate(${x} ${y})`, tabindex: "0", role: "button", "data-layer": layer, "data-index": index });
+        group.append(svgElement("circle", { r: layer === "input" ? 27 : 31 }));
+        const id = svgElement("text", { y: -2, class: "node-id" });
+        id.textContent = layer === "input" ? `x${index + 1}` : layer === "hidden" ? `h${index + 1}` : TOKENS[index];
+        group.append(id);
+        const value = svgElement("text", { y: layer === "output" ? 48 : 45, class: "node-value" });
+        value.dataset.role = "value";
+        group.append(value);
+        if (layer === "hidden") {
+          const caption = svgElement("text", { y: 12, class: "node-caption" });
+          caption.textContent = "ReLU";
+          group.append(caption);
+        }
+        group.addEventListener("mousedown", event => event.preventDefault());
+        group.addEventListener("click", () => {
+          selectNode(layer, index);
+          if (!document.body.classList.contains("keyboard-nav") && typeof group.blur === "function") group.blur();
+        });
+        group.addEventListener("keydown", event => activateWithKeyboard(event, () => selectNode(layer, index)));
+        $("#nodes").append(group);
+      }
+
+      function activateWithKeyboard(event, callback) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          callback();
+        }
+      }
+
+      function applyPreset(name) {
+        stopRun();
+        state.x = [...PRESETS[name]];
+        state.preset = name;
+        state.phase = 0;
+        state.selection = { type: "node", layer: "hidden", index: 0 };
+        state.x.forEach((value, index) => { $("#x-" + index).value = value; });
+        updatePresetButtons();
+        render();
+      }
+
+      function updatePresetButtons() {
+        $$(".preset").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.preset === state.preset)));
+      }
+
+      function stopRun() {
+        state.timers.forEach(clearTimeout);
+        state.timers = [];
+        state.running = false;
+        $("#run").disabled = false;
+      }
+
+      function step() {
+        stopRun();
+        state.phase = state.phase >= PHASES.length - 1 ? 0 : state.phase + 1;
+        render();
+      }
+
+      function run() {
+        stopRun();
+        state.running = true;
+        state.phase = 0;
+        $("#run").disabled = true;
+        render();
+        const pace = REDUCED_MOTION ? 80 : 720;
+        [1, 2, 3, 4].forEach((phase, index) => {
+          state.timers.push(setTimeout(() => {
+            state.phase = phase;
+            render();
+            if (phase === 4) {
+              state.running = false;
+              $("#run").disabled = false;
+            }
+          }, pace * (index + 1)));
+        });
+      }
+
+      function selectNode(layer, index) {
+        state.selection = { type: "node", layer, index };
+        render();
+      }
+
+      function selectEdge(fromLayer, from, toLayer, to, weight) {
+        state.selection = { type: "edge", fromLayer, from, toLayer, to, weight };
+        render();
+      }
+
+      function render() {
+        const values = compute();
+        state.x.forEach((value, index) => {
+          $("#x-" + index + "-out").textContent = fmt(value);
+        });
+        renderPhases();
+        renderEdges();
+        renderNodes(values);
+        renderDistribution(values);
+        renderInspector(values);
+        renderStatus(values);
+      }
+
+      function renderPhases() {
+        $$(".phase-chip").forEach((chip, index) => {
+          chip.className = "phase-chip";
+          if (index < state.phase) chip.classList.add("done");
+          if (index === state.phase) {
+            chip.classList.add("current");
+            chip.setAttribute("aria-current", "step");
+          } else {
+            chip.removeAttribute("aria-current");
+          }
+        });
+      }
+
+      function renderEdges() {
+        $$(".edge").forEach(edge => {
+          const phase = Number(edge.dataset.phase);
+          edge.classList.toggle("future", state.phase < phase);
+          edge.classList.toggle("available", state.phase > phase);
+          edge.classList.toggle("active", state.phase === phase);
+          const selection = state.selection;
+          const selected = selection.type === "edge" && selection.fromLayer === edge.dataset.fromLayer && selection.from === Number(edge.dataset.from) && selection.toLayer === edge.dataset.toLayer && selection.to === Number(edge.dataset.to);
+          edge.classList.toggle("selected", selected);
+        });
+      }
+
+      function renderNodes(values) {
+        const winner = values.probabilities.indexOf(Math.max(...values.probabilities));
+        $$(".node").forEach(node => {
+          const layer = node.dataset.layer;
+          const index = Number(node.dataset.index);
+          const revealPhase = layer === "input" ? 0 : layer === "hidden" ? 1 : 3;
+          const completePhase = layer === "hidden" ? 2 : layer === "output" ? 4 : 0;
+          node.className.baseVal = "node";
+          if (state.phase < revealPhase) node.classList.add("future");
+          else node.classList.add("available");
+          if ((layer === "hidden" && (state.phase === 1 || state.phase === 2)) || (layer === "output" && state.phase === 3) || (layer === "input" && state.phase === 0)) node.classList.add("current");
+          if ((layer === "hidden" && state.phase > completePhase) || (layer === "output" && state.phase >= completePhase)) node.classList.add("complete");
+          if (layer === "output" && state.phase === 4 && index === winner) node.classList.add("winner");
+          if (state.selection.type === "node" && state.selection.layer === layer && state.selection.index === index) node.classList.add("selected");
+          const text = node.querySelector('[data-role="value"]');
+          if (layer === "input") text.textContent = fmt(state.x[index]);
+          if (layer === "hidden") text.textContent = state.phase < 1 ? "—" : state.phase === 1 ? `z ${fmt(values.z[index])}` : `h ${fmt(values.h[index])}`;
+          if (layer === "output") text.textContent = state.phase < 3 ? "—" : state.phase === 3 ? `logit ${fmt(values.logits[index])}` : `${(values.probabilities[index] * 100).toFixed(1)}%`;
+        });
+      }
+
+      function renderDistribution(values) {
+        const top = values.probabilities.indexOf(Math.max(...values.probabilities));
+        $$(".token-row").forEach((row, index) => {
+          const visible = state.phase >= 4;
+          row.classList.toggle("top", visible && index === top);
+          row.querySelector(".fill").style.width = visible ? `${values.probabilities[index] * 100}%` : "0%";
+          row.querySelector(".value").textContent = visible ? `${(values.probabilities[index] * 100).toFixed(1)}%` : "—";
+        });
+        $("#distribution-note").textContent = state.phase >= 4 ? `“${TOKENS[top]}” leads this computed distribution.` : "Probabilities appear after softmax.";
+      }
+
+      function renderInspector(values) {
+        const selection = state.selection;
+        const rows = [];
+        let title, reading, meta, copy, calculation;
+        if (selection.type === "edge") {
+          const revealPhase = selection.toLayer === "hidden" ? 1 : 3;
+          const sourceValue = selection.fromLayer === "input" ? state.x[selection.from] : values.h[selection.from];
+          const contribution = sourceValue * selection.weight;
+          const sourceLabel = `${selection.fromLayer === "input" ? "x" : "h"}${selection.from + 1}`;
+          title = `${selection.fromLayer === "input" ? "x" : "h"}${selection.from + 1} → ${selection.toLayer === "hidden" ? "h" + (selection.to + 1) : TOKENS[selection.to]}`;
+          reading = `weight ${fmt(selection.weight)}`;
+          meta = selection.weight >= 0 ? "positive connection" : "negative connection";
+          copy = `<strong>One contribution.</strong> The wire scales its source before the destination adds it to the other incoming signals.`;
+          calculation = state.phase < revealPhase ? `Advance to ${selection.toLayer === "hidden" ? "Linear" : "Logits"} to reveal this contribution.` : `${fmt(sourceValue)} × ${fmt(selection.weight)} = ${fmt(contribution, 3)}`;
+          rows.push([sourceLabel, fmt(selection.weight), state.phase < revealPhase ? "—" : fmt(contribution, 3)]);
+        } else if (selection.layer === "input") {
+          const value = state.x[selection.index];
+          title = `input x${selection.index + 1}`;
+          reading = fmt(value);
+          meta = "hidden-state activation";
+          copy = `<strong>Input activation.</strong> This value stands in for one coordinate of a tiny hidden state, not a human-readable feature.`;
+          calculation = `x${selection.index + 1} = ${fmt(value)}`;
+        } else if (selection.layer === "hidden") {
+          const j = selection.index;
+          title = `hidden h${j + 1}`;
+          reading = state.phase < 1 ? "waiting for linear sum" : state.phase === 1 ? `z${j + 1} = ${fmt(values.z[j])}` : `ReLU → ${fmt(values.h[j])}`;
+          meta = "ReLU neuron";
+          copy = `<strong>Weighted sum.</strong> Every incoming activation is scaled, added, and shifted by a bias; ReLU then clips negative values to zero.`;
+          calculation = state.phase < 1 ? "Advance to Linear to reveal Σ(wx) + b." : W1[j].map((w, i) => `${fmt(w)}×${fmt(state.x[i])}`).join(" ") + ` ${fmt(B1[j])} = ${fmt(values.z[j])}`;
+          W1[j].forEach((w, i) => rows.push([`x${i + 1}`, fmt(w), state.phase < 1 ? "—" : fmt(w * state.x[i], 3)]));
+          rows.push(["bias", "", state.phase < 1 ? "—" : fmt(B1[j])]);
+        } else {
+          const k = selection.index;
+          title = `token “${TOKENS[k]}”`;
+          reading = state.phase < 3 ? "waiting for logits" : state.phase === 3 ? `logit ${fmt(values.logits[k])}` : `${(values.probabilities[k] * 100).toFixed(1)}%`;
+          meta = "output candidate";
+          copy = `<strong>Output logit.</strong> Hidden activations produce an unnormalized score. Softmax compares all three scores to make one distribution.`;
+          calculation = state.phase < 3 ? "Advance to Logits to reveal Σ(wh) + b." : W2[k].map((w, j) => `${fmt(w)}×${fmt(values.h[j])}`).join(" ") + ` ${fmt(B2[k])} = ${fmt(values.logits[k])}`;
+          W2[k].forEach((w, j) => rows.push([`h${j + 1}`, fmt(w), state.phase < 3 ? "—" : fmt(w * values.h[j], 3)]));
+          rows.push(["bias", "", state.phase < 3 ? "—" : fmt(B2[k])]);
+        }
+        $("#selection-title").textContent = title;
+        $("#selection-reading").textContent = reading;
+        $("#selection-meta").textContent = meta;
+        $("#selection-copy").innerHTML = copy;
+        $("#calculation").textContent = calculation;
+        $("#contrib-head").hidden = rows.length === 0;
+        $("#contributions").innerHTML = rows.map(([name, weight, result]) => `<div class="contrib-row"><span>${name}</span><span>${weight}</span><b>${result}</b></div>`).join("");
+      }
+
+      function renderStatus(values) {
+        const messages = [
+          ["Input activations are ready.", "Input.", "Four values stand in for one tiny hidden state."],
+          ["Linear sums collected at the hidden layer.", "Linear.", "Each wire contributes x × w, then the bias is added."],
+          ["ReLU kept positive signals and clipped the rest.", "ReLU.", "Negative pre-activations become zero before the next layer."],
+          ["Three token logits have been computed.", "Logits.", "These scores are comparable, but do not yet sum to one."],
+          [`Softmax selects “${TOKENS[values.probabilities.indexOf(Math.max(...values.probabilities))]}” as the leader.`, "Softmax.", "Exponentiate, normalize, and the three probabilities sum to one."]
+        ];
+        $("#status").textContent = messages[state.phase][0];
+        $("#status").classList.toggle("complete", state.phase === 4);
+        $("#caption-lead").textContent = messages[state.phase][1];
+        $("#caption-lead").nextSibling.textContent = ` ${messages[state.phase][2]}`;
+        $("#step").textContent = state.phase === 4 ? "Restart" : "Step";
+      }
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Tab") document.body.classList.add("keyboard-nav");
+      });
+      document.addEventListener("pointerdown", () => document.body.classList.remove("keyboard-nav"));
+
+      buildControls();
+      buildPhaseTrack();
+      buildDistribution();
+      buildNetwork();
+      render();
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries on this page. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>

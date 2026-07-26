@@ -34,6 +34,7 @@ The first collection builds an intuitive path through five concepts — tokeniza
 The training collection starts from the update rule that lets a model learn:
 
 - [Gradient Descent](gradient-descent/index.html) — opened by [Gradient Descent Studio](gradient-descent/gradient-descent-studio.html), a native Canvas workbench with a computed 3D loss surface, a top-down contour view, and learning-rate experiments from convergence to divergence.
+- [Forward Pass](forward-pass/index.html) — opened by [Forward Pass Studio](forward-pass/forward-pass-studio.html), a native SVG workbench for stepping a computed tiny MLP through weighted sums, ReLU activations, token logits, and softmax probabilities.
 
 ## Check locally
 
