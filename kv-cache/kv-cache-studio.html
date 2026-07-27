@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive Peek LLM studio comparing autoregressive decoding with and without a KV cache, including computed MHA, GQA, and MQA memory estimates. Self-contained HTML, works offline.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
+  <title>KV Cache Studio — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
+      --amber: #b45309;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --radius: 6px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; line-height: 1.55; overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--bg); }
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
+
+    /* ================= Chrome and workbench ================= */
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+    .workbench { display: grid; grid-template-columns: 292px minmax(0, 1fr) 336px; min-height: 0; }
+    aside, .stage { min-height: 0; overflow-y: auto; }
+    .rail { padding: 16px 20px 20px; }
+    .rail-left { border-right: 1px solid var(--line); }
+    .rail-right { border-left: 1px solid var(--line); }
+    .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .pane-label { display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px; background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line); color: var(--ink); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
+    .stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; overflow: hidden; padding: 16px 24px 14px; }
+    .stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .status-line { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-subtle); font-size: 13px; }
+    .status-line::before { content: ""; flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .status-line.complete::before { background: var(--green); }
+    .step-reading { color: var(--muted); font: 500 11.5px var(--font-mono); font-variant-numeric: tabular-nums; }
+    .frame { position: relative; min-height: 0; border: 1px solid var(--line); background: linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px, var(--panel); background-repeat: no-repeat; }
+    .decode-stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 520px; height: 100%; padding: 20px 22px 18px; overflow: hidden; }
+    .plate-note { margin: 0 0 16px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+    .decode-core { align-self: center; width: 100%; padding: 12px 0 18px; }
+    .stage-caption { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 12.5px; }
+    .stage-caption strong { color: var(--ink-soft); font-weight: 600; }
+
+    /* ================= Controls ================= */
+    button { min-height: 40px; padding: 0 15px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: 600 12px/1 inherit; font-family: inherit; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    button:hover { border-color: var(--ink); }
+    button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .button-grid.three { grid-template-columns: repeat(3, 1fr); }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .choice[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
+    .hint { margin: 11px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
+    .prompt-preview { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 12px; }
+    .mini-token { padding: 3px 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--ink-soft); font: 500 11px var(--font-mono); }
+    .arch-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .arch-readout div { padding: 9px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .arch-readout b { display: block; color: var(--ink-soft); font: 600 17px var(--font-mono); }
+    .arch-readout span { color: var(--muted); font-size: 9.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+    .legend { display: grid; gap: 8px; color: var(--ink-subtle); font-size: 12.5px; }
+    .legend span { display: flex; align-items: center; gap: 8px; }
+    .legend i { display: inline-block; width: 26px; height: 8px; border: 1px solid var(--line-strong); background: var(--panel); }
+    .legend .compute { border-color: var(--accent); background: var(--accent-wash); }
+    .legend .reuse { border-color: var(--green); background: rgba(74, 124, 67, 0.08); }
+
+    /* ================= Decode comparison ================= */
+    .sequence-block { margin-bottom: 18px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+    .sequence-head, .lane-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .sequence-head h2, .lane-head h2 { margin: 0; color: var(--ink-subtle); font-size: 11px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; }
+    .sequence-head span, .lane-head span { color: var(--muted); font: 500 10.5px var(--font-mono); }
+    .sequence-strip { display: grid; justify-content: center; gap: 6px; margin-top: 10px; padding: 2px 2px 5px; }
+    .sequence-token { min-width: 0; min-height: 38px; padding: 0 5px; overflow: hidden; border-color: var(--line); background: var(--panel); color: var(--ink-soft); font: 500 10.5px var(--font-mono); letter-spacing: 0; text-overflow: ellipsis; text-transform: none; white-space: nowrap; }
+    .sequence-token.generated { border-color: rgba(161, 100, 47, 0.48); color: var(--accent-ink); }
+    .sequence-token.selected { border-color: var(--violet); color: var(--violet); }
+    .lane + .lane { margin-top: 16px; }
+    .lane-head { margin-bottom: 9px; }
+    .lane-head .lane-title { display: flex; align-items: center; gap: 8px; }
+    .lane-head .badge { padding: 2px 7px; border-radius: 3px; background: rgba(176, 58, 82, 0.09); color: var(--rose); font: 600 9px var(--font-mono); letter-spacing: 0.05em; text-transform: uppercase; }
+    .lane.cache .lane-head .badge { background: rgba(74, 124, 67, 0.09); color: var(--green); }
+    .lane-track { padding: 2px 2px 5px; }
+    .lane-cells { display: grid; gap: 6px; align-items: stretch; justify-content: center; }
+    .kv-cell { position: relative; min-width: 0; min-height: 52px; padding: 5px; overflow: hidden; border-color: var(--line); background: var(--panel); color: var(--ink-soft); font-family: var(--font-mono); letter-spacing: 0; text-transform: none; }
+    .kv-cell:hover { border-color: var(--line-strong); }
+    .kv-cell.selected { border-color: var(--violet); }
+    .kv-cell.selected::after { content: ""; position: absolute; left: 6px; right: 6px; bottom: 3px; height: 2px; background: var(--violet); }
+    .slot-position { display: block; margin-bottom: 4px; color: var(--muted); font: 500 8.5px/1 var(--font-mono); }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+    .pair i { display: grid; place-items: center; height: 22px; border: 1px solid var(--line); border-radius: 2px; color: var(--muted); font-style: normal; font-size: 9px; }
+    .history-summary { display: none; min-width: 0; min-height: 52px; place-content: center; border: 1px dashed var(--line-strong); border-radius: 3px; background: var(--panel); text-align: center; }
+    .history-summary b { display: block; color: var(--ink-soft); font: 600 12px/1 var(--font-mono); }
+    .history-summary small { color: var(--muted); font: 500 8px var(--font-mono); }
+    .history-summary.selected { border-style: solid; border-color: var(--violet); }
+    .lane.no-cache .history-summary { border-color: rgba(176, 58, 82, 0.42); }
+    .lane.cache .history-summary { border-color: rgba(74, 124, 67, 0.46); }
+    .lane.no-cache .kv-cell.recomputed { border-color: rgba(176, 58, 82, 0.4); background: rgba(176, 58, 82, 0.035); }
+    .lane.no-cache .kv-cell.active { border-color: var(--rose); background: rgba(176, 58, 82, 0.055); animation: recompute 560ms var(--ease); }
+    .lane.cache .kv-cell.stored { border-color: rgba(74, 124, 67, 0.42); background: linear-gradient(rgba(74, 124, 67, 0.045), rgba(74, 124, 67, 0.045)), var(--panel); }
+    .lane.cache .kv-cell.stored:not(.latest):not(.selected) { opacity: 0.76; }
+    .lane.cache .kv-cell.reused { opacity: 0.68; }
+    .lane.cache .kv-cell.latest { border-color: var(--accent); background: var(--accent-wash); }
+    .lane.cache .kv-cell.append { border-color: var(--accent); background: var(--accent-wash); animation: append-cell 560ms var(--ease); }
+    .work-comparison { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 16px; padding: 10px 12px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .work-label { color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+    .work-equation { display: flex; align-items: center; justify-content: center; gap: 9px; min-width: 0; font-family: var(--font-mono); }
+    .work-number { display: inline-flex; align-items: baseline; gap: 5px; color: var(--rose); }
+    .work-number.cache-work { color: var(--green); }
+    .work-number b { font-size: 21px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+    .work-number small { color: var(--muted); font: 500 9px var(--font-mono); }
+    .work-arrow { color: var(--line-strong); font: 500 17px var(--font-mono); }
+    .work-unit { color: var(--ink-subtle); font: 500 10.5px var(--font-mono); }
+    .saving-reading { margin: 0; color: var(--green); font: 600 11px var(--font-mono); text-align: right; }
+    .query-note { display: flex; align-items: center; gap: 10px; min-width: 0; margin-top: 16px; padding: 10px 12px; border: 1px dashed var(--line); color: var(--ink-subtle); font-size: 12.5px; }
+    .query-symbol { display: inline-grid; place-items: center; flex: 0 0 auto; width: 34px; height: 28px; border: 1px solid var(--violet); border-radius: 3px; color: var(--violet); }
+    .query-symbol math { font: 600 12px var(--font-serif); }
+    .query-note span { min-width: 0; }
+    .query-note strong { color: var(--ink-soft); font-weight: 600; }
+    @keyframes recompute { 0% { transform: translateY(0); } 45% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+    @keyframes append-cell { 0% { transform: translateX(14px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+    /* ================= Inspector ================= */
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat { padding: 10px 11px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .stat b { display: block; color: var(--ink-soft); font: 600 18px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--muted); font-size: 9.5px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+    .stat.focus b { color: var(--green); }
+    .inspector-focus { margin: 0 0 3px; color: var(--ink-soft); font: 600 16px/1.3 var(--font-mono); }
+    .inspector-reading { margin: 0; color: var(--ink-subtle); font: 500 14px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .inspector-meta { margin: 4px 0 0; color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .inspector-copy { margin: 10px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .inspector-copy strong { color: var(--ink-soft); font-weight: 600; }
+    .selected-glyph { margin: 0; color: var(--ink); font: 600 23px/1.15 var(--font-mono); overflow-wrap: anywhere; }
+    .selected-context { margin: 5px 0 0; color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase; }
+    .retention-state { margin-top: 13px; padding: 7px 0 7px 10px; border-left: 2px solid var(--green); }
+    .retention-state b { display: block; color: var(--ink-soft); font: 600 14px/1.25 var(--font-mono); }
+    .retention-state span { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; }
+    .selected-explanation { margin: 11px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .selected-explanation var, .query-note var { color: var(--ink-soft); font-family: var(--font-serif); }
+    .memory-hero { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+    .memory-label { display: block; margin-bottom: 3px; color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; }
+    .memory-primary { display: block; color: var(--ink); font: 600 26px/1.05 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .memory-chips { display: flex; justify-content: end; gap: 5px; flex-wrap: wrap; }
+    .memory-chips span { padding: 3px 7px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); font: 500 10px var(--font-mono); }
+    .shape-box, .formula-box { margin-top: 11px; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow-x: auto; }
+    .shape-label { display: block; margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .shape-box code { display: block; color: var(--ink-soft); font: 500 11.5px/1.55 var(--font-mono); white-space: normal; overflow-wrap: anywhere; }
+    .formula-box math { display: block; font-family: var(--font-serif); font-size: 15px; }
+    .projection-reading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 9px; color: var(--muted); font-size: 11.5px; }
+    .projection-reading b { color: var(--ink-soft); font: 600 13px var(--font-mono); }
+    .memory-meta { margin: 2px 0 0; color: var(--muted); font-size: 11.5px; }
+    .source-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+    .source-list li + li { margin-top: 6px; }
+
+    @media (max-width: 1120px) { .workbench { grid-template-columns: 268px minmax(0, 1fr) 306px; } .rail { padding-inline: 16px; } .stage { padding-inline: 16px; } }
+    @media (max-width: 920px) {
+      body { overflow: auto; display: block; }
+      .workbench { grid-template-columns: 1fr; }
+      aside, .stage { overflow: visible; }
+      .rail-left, .rail-right { border: 0; }
+      .rail-left { border-bottom: 1px solid var(--line); }
+      .rail-right { border-top: 1px solid var(--line); }
+      .stage { min-height: 680px; }
+      .decode-stage { min-height: 590px; }
+    }
+    @media (max-width: 680px) { .work-comparison { grid-template-columns: 1fr; gap: 7px; } .work-equation { justify-content: flex-start; } .saving-reading { text-align: left; } }
+    @media (max-width: 560px) { header.top > .label { display: none; } .stage { padding-inline: 10px; } .decode-stage { padding-inline: 14px; } .stage-caption { flex-direction: column; gap: 2px; } .button-grid.three { grid-template-columns: 1fr; } .work-number small, .work-unit { display: none; } .lane-cells.has-history-summary { grid-template-columns: repeat(5, minmax(0, 68px)) !important; } .lane-cells.has-history-summary .history-summary { display: grid; } .lane-cells.has-history-summary .older-history { display: none; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">KV Cache</a>
+    </div>
+    <p class="label">Studio · Computed decoding trace</p>
+    <p class="fig-no">Fig. 1</p>
+  </header>
+
+  <div class="workbench">
+    <aside class="rail rail-left" aria-labelledby="controls-title">
+      <section>
+        <h2 class="pane-label" id="controls-title">Conceptual prompt</h2>
+        <div class="button-grid three">
+          <button class="choice prompt-choice" type="button" data-prompt="story" aria-pressed="true">Story</button>
+          <button class="choice prompt-choice" type="button" data-prompt="model" aria-pressed="false">Model</button>
+          <button class="choice prompt-choice" type="button" data-prompt="code" aria-pressed="false">Code</button>
+        </div>
+        <div class="prompt-preview" id="prompt-preview" aria-label="Prompt tokens"></div>
+        <p class="hint"><b>Start here.</b> Press Step to append one generated token and compare the two tracks.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Attention layout</h2>
+        <div class="button-grid three">
+          <button class="choice arch-choice" type="button" data-arch="mha" aria-pressed="true">MHA</button>
+          <button class="choice arch-choice" type="button" data-arch="gqa" aria-pressed="false">GQA</button>
+          <button class="choice arch-choice" type="button" data-arch="mqa" aria-pressed="false">MQA</button>
+        </div>
+        <div class="arch-readout">
+          <div><b id="query-heads">12</b><span>query heads</span></div>
+          <div><b id="kv-heads">12</b><span>KV heads</span></div>
+        </div>
+        <p class="hint" id="arch-note">MHA keeps one K/V head per query head.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Decode</h2>
+        <div class="button-row">
+          <button class="primary" id="run" type="button">Run</button>
+          <button id="step" type="button">Step</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <p class="hint">Run completes the short sequence. Press <b>Space</b> to advance one token.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Read the cells</h2>
+        <div class="legend">
+          <span><i class="compute"></i> projected this step</span>
+          <span><i class="reuse"></i> retained and reused</span>
+          <span><i></i> computed, not retained</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-toolbar">
+        <p class="status-line" id="status" aria-live="polite">4 historical K/V pairs reused; “jumps” is now cached.</p>
+        <span class="step-reading" id="step-reading">decode 1 · 5 tokens</span>
+      </div>
+      <section class="frame decode-stage" aria-labelledby="stage-title">
+        <p class="plate-note" id="stage-title">Computed teaching sequence · one representative attention layer</p>
+        <div class="decode-core">
+          <div class="sequence-block">
+            <div class="sequence-head"><h2>Autoregressive sequence</h2><span id="sequence-count">5 positions</span></div>
+            <div class="sequence-strip" id="sequence-strip"></div>
+          </div>
+          <div class="lane no-cache">
+            <div class="lane-head">
+              <div class="lane-title"><h2>Without cache</h2><span class="badge">recompute history</span></div>
+              <span id="no-cache-cost">this step 5 pairs</span>
+            </div>
+            <div class="lane-track"><div class="lane-cells" id="no-cache-cells"></div></div>
+          </div>
+          <div class="lane cache">
+            <div class="lane-head">
+              <div class="lane-title"><h2>With KV cache</h2><span class="badge">reuse + append</span></div>
+              <span id="cache-cost">this step 1 new pair</span>
+            </div>
+            <div class="lane-track"><div class="lane-cells" id="cache-cells"></div></div>
+          </div>
+          <div class="work-comparison">
+            <span class="work-label">Work this decode step</span>
+            <div class="work-equation">
+              <span class="work-number"><b id="work-without">5</b><small>without cache</small></span>
+              <i class="work-arrow" aria-hidden="true">→</i>
+              <span class="work-number cache-work"><b id="work-with">1</b><small>with cache</small></span>
+              <span class="work-unit">K/V projections</span>
+            </div>
+            <p class="saving-reading" id="saving-reading">4 historical positions reused</p>
+          </div>
+        </div>
+        <div class="query-note">
+          <span class="query-symbol">
+            <math aria-label="current query Q sub t" data-tex="Q_t"><msub><mi>Q</mi><mi>t</mi></msub></math>
+          </span>
+          <span><strong>Query is temporary.</strong> It reads cached <var>K</var>/<var>V</var> for attention; only the new pair is retained.</span>
+        </div>
+      </section>
+      <div class="stage-caption">
+        <span><strong id="caption-lead">Reuse.</strong> History stays put while one K/V pair joins the cache.</span>
+        <span>Token K/V projections are counted, not wall-clock speed.</span>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-labelledby="inspector-title">
+      <section>
+        <h2 class="pane-label">This decode step</h2>
+        <div class="stats">
+          <div class="stat"><b id="without-step">5</b><span>without cache</span></div>
+          <div class="stat focus"><b id="with-step">1</b><span>with cache</span></div>
+          <div class="stat"><b id="reused-step">4</b><span>history reused</span></div>
+          <div class="stat"><b id="saved-total">4</b><span>cumulative saved</span></div>
+        </div>
+        <p class="hint">Counts are token positions whose K/V projections are computed.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Cache shape &amp; memory</h2>
+        <div class="memory-hero">
+          <div><span class="memory-label">Current cache</span><b class="memory-primary" id="memory-reading">180 KiB</b></div>
+          <div class="memory-chips"><span id="shape-title">MHA</span><span id="position-chip">S = 5</span></div>
+        </div>
+        <p class="inspector-meta">FP16 · batch 1 · all 12 layers</p>
+        <div class="shape-box"><span class="shape-label">Logical K/V shape · one layer</span><code id="shape-reading">[B=1, Hkv=12, S=5, Dh=64]</code></div>
+        <div class="formula-box">
+          <math display="block" aria-label="cache bytes equals two times layers times batch times sequence times KV heads times head dimension times bytes per value" data-tex="M_{KV}=2LBSH_{KV}D_hc">
+            <mrow><msub><mi>M</mi><mrow><mi>K</mi><mi>V</mi></mrow></msub><mo>=</mo><mn>2</mn><mi>L</mi><mi>B</mi><mi>S</mi><msub><mi>H</mi><mrow><mi>K</mi><mi>V</mi></mrow></msub><msub><mi>D</mi><mi>h</mi></msub><mi>c</mi></mrow>
+          </math>
+        </div>
+        <div class="projection-reading"><span>Projected at 2K context</span><b id="projected-memory">72 MiB</b></div>
+        <p class="memory-meta">The leading 2 accounts for both keys and values. Cache memory grows linearly with sequence length.</p>
+      </section>
+      <section>
+        <h2 class="pane-label" id="inspector-title">Selected token</h2>
+        <p class="selected-glyph" id="selected-token">▁jumps</p>
+        <p class="selected-context" id="selected-meta">position 5 · generated token</p>
+        <div class="retention-state">
+          <b id="selected-state">K/V retained</b>
+          <span id="selected-detail">Stored in all 12 layers</span>
+        </div>
+        <p class="selected-explanation" id="selected-copy"><var>Q</var> is used for this decode step, then discarded. <var>K</var> and <var>V</var> remain available to later tokens.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">What the cache trades</h2>
+        <p class="inspector-copy"><strong>More memory, less repeated projection.</strong> Attention still reads a longer history as the sequence grows; KV cache does not make long-context attention constant-cost.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://arxiv.org/abs/1706.03762" rel="noreferrer">Attention Is All You Need</a></li>
+          <li><a href="https://arxiv.org/abs/1911.02150" rel="noreferrer">Fast Transformer Decoding: One Write-Head is All You Need</a></li>
+          <li><a href="https://arxiv.org/abs/2305.13245" rel="noreferrer">GQA: Training Generalized Multi-Query Transformer Models</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const MODEL = { layers: 12, batch: 1, queryHeads: 12, headDim: 64, bytesPerValue: 2 };
+      const ARCHITECTURES = {
+        mha: { label: "MHA", kvHeads: 12, note: "MHA keeps one K/V head per query head." },
+        gqa: { label: "GQA", kvHeads: 4, note: "GQA lets each K/V head serve a group of query heads." },
+        mqa: { label: "MQA", kvHeads: 1, note: "MQA shares one K/V head across every query head." }
+      };
+      const PROMPTS = {
+        story: { prompt: ["The", "quick", "brown", "fox"], continuation: ["jumps", "over", "the", "fence", "."] },
+        model: { prompt: ["A", "language", "model"], continuation: ["predicts", "the", "next", "token", "."] },
+        code: { prompt: ["for", "(", "let", "i"], continuation: ["=", "0", ";", "i", "++"] }
+      };
+      const state = {
+        promptKey: "story", architecture: "mha", generated: 1, selected: 4,
+        animating: false, running: false, timers: []
+      };
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      function promptData() { return PROMPTS[state.promptKey]; }
+      function sequence() { return [...promptData().prompt, ...promptData().continuation.slice(0, state.generated)]; }
+      function maxGenerated() { return promptData().continuation.length; }
+      function currentLength() { return sequence().length; }
+
+      function cumulativeProjectionCounts() {
+        const promptLength = promptData().prompt.length;
+        let withoutCache = promptLength;
+        for (let step = 1; step <= state.generated; step += 1) withoutCache += promptLength + step;
+        return { withoutCache, withCache: promptLength + state.generated };
+      }
+
+      function cacheBytes(length = currentLength()) {
+        const kvHeads = ARCHITECTURES[state.architecture].kvHeads;
+        return 2 * MODEL.layers * MODEL.batch * length * kvHeads * MODEL.headDim * MODEL.bytesPerValue;
+      }
+
+      function formatBytes(bytes) {
+        if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GiB`;
+        if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(bytes >= 10 * 1024 ** 2 ? 0 : 1)} MiB`;
+        if (bytes >= 1024) return `${(bytes / 1024).toFixed(bytes >= 10 * 1024 ? 0 : 1)} KiB`;
+        return `${bytes} B`;
+      }
+
+      function displayToken(token, index) { return index === 0 || /^[().;=]$/.test(token) ? token : `▁${token}`; }
+
+      function selectedTokenLabel(token, index) {
+        return /^[^\p{L}\p{N}_]+$/u.test(token) ? `"${token}"` : displayToken(token, index);
+      }
+
+      function buildPromptPreview() {
+        $("#prompt-preview").innerHTML = promptData().prompt.map((token, index) => `<span class="mini-token">${displayToken(token, index)}</span>`).join("");
+      }
+
+      function makeSequenceToken(token, index, promptLength) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `sequence-token${index >= promptLength ? " generated" : ""}${index === state.selected ? " selected" : ""}`;
+        button.textContent = displayToken(token, index);
+        button.setAttribute("aria-pressed", String(index === state.selected));
+        button.setAttribute("aria-label", `Select token position ${index + 1}: ${token}`);
+        button.addEventListener("click", () => { state.selected = index; render(); });
+        return button;
+      }
+
+      function makeKvCell(token, index, lane) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "kv-cell";
+        if (currentLength() > 5 && index < currentLength() - 4) button.classList.add("older-history");
+        if (index === state.selected) button.classList.add("selected");
+        if (lane === "no-cache" && state.generated > 0) button.classList.add("recomputed");
+        if (lane === "no-cache" && state.animating) button.classList.add("active");
+        if (lane === "cache") {
+          button.classList.add("stored");
+          if (state.generated > 0 && index === currentLength() - 1) button.classList.add("latest");
+          if (state.animating && state.generated > 0) button.classList.add(index === currentLength() - 1 ? "append" : "reused");
+        }
+        button.setAttribute("aria-label", `${lane === "cache" ? "Cached" : "Computed"} K and V for position ${index + 1}: ${token}`);
+        button.innerHTML = `<span class="slot-position">${String(index + 1).padStart(2, "0")}</span><span class="pair"><i>K</i><i>V</i></span>`;
+        button.addEventListener("click", () => { state.selected = index; render(); });
+        return button;
+      }
+
+      function makeHistorySummary(count, lane) {
+        const summary = document.createElement("span");
+        summary.className = "history-summary";
+        if (state.selected < count) summary.classList.add("selected");
+        summary.setAttribute("role", "img");
+        summary.setAttribute("aria-label", `${count} earlier ${lane === "cache" ? "cached" : "recomputed"} positions grouped`);
+        summary.innerHTML = `<b>+${count}</b><small>earlier</small>`;
+        return summary;
+      }
+
+      function renderTracks() {
+        const tokens = sequence();
+        const promptLength = promptData().prompt.length;
+        const strip = $("#sequence-strip");
+        const noCache = $("#no-cache-cells");
+        const cache = $("#cache-cells");
+        strip.replaceChildren(); noCache.replaceChildren(); cache.replaceChildren();
+        tokens.forEach((token, index) => {
+          strip.append(makeSequenceToken(token, index, promptLength));
+          noCache.append(makeKvCell(token, index, "no-cache"));
+          cache.append(makeKvCell(token, index, "cache"));
+        });
+        const groupedCount = Math.max(0, tokens.length - 4);
+        [noCache, cache].forEach((row, index) => {
+          row.classList.toggle("has-history-summary", groupedCount > 1);
+          if (groupedCount > 1) row.prepend(makeHistorySummary(groupedCount, index === 0 ? "no-cache" : "cache"));
+        });
+        const columns = `repeat(${tokens.length}, minmax(0, 68px))`;
+        [strip, noCache, cache].forEach(row => { row.style.gridTemplateColumns = columns; });
+      }
+
+      function renderControls() {
+        $$(".prompt-choice").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.prompt === state.promptKey)));
+        $$(".arch-choice").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.arch === state.architecture)));
+        const architecture = ARCHITECTURES[state.architecture];
+        $("#query-heads").textContent = MODEL.queryHeads;
+        $("#kv-heads").textContent = architecture.kvHeads;
+        $("#arch-note").textContent = architecture.note;
+        $("#run").disabled = state.running;
+        $("#step").textContent = state.generated >= maxGenerated() ? "Restart" : "Step";
+        buildPromptPreview();
+      }
+
+      function renderCosts() {
+        const length = currentLength();
+        const promptLength = promptData().prompt.length;
+        const prefill = state.generated === 0;
+        const withoutStep = prefill ? promptLength : length;
+        const withStep = prefill ? promptLength : 1;
+        const reused = prefill ? 0 : length - 1;
+        const cumulative = cumulativeProjectionCounts();
+        $("#without-step").textContent = withoutStep;
+        $("#with-step").textContent = withStep;
+        $("#reused-step").textContent = reused;
+        $("#saved-total").textContent = cumulative.withoutCache - cumulative.withCache;
+        $("#no-cache-cost").textContent = prefill ? `prefill ${promptLength} pairs` : `this step ${length} pairs`;
+        $("#cache-cost").textContent = prefill ? `prefill ${promptLength} pairs` : "this step 1 new pair";
+        $("#work-without").textContent = withoutStep;
+        $("#work-with").textContent = withStep;
+        $("#saving-reading").textContent = prefill
+          ? "Prompt projected once on both paths"
+          : `${reused} historical position${reused === 1 ? "" : "s"} reused`;
+      }
+
+      function renderMemory() {
+        const length = currentLength();
+        const architecture = ARCHITECTURES[state.architecture];
+        $("#shape-title").textContent = architecture.label;
+        $("#position-chip").textContent = `S = ${length}`;
+        $("#memory-reading").textContent = formatBytes(cacheBytes());
+        $("#shape-reading").textContent = `[B=1, Hkv=${architecture.kvHeads}, S=${length}, Dh=${MODEL.headDim}]`;
+        $("#projected-memory").textContent = formatBytes(cacheBytes(2048));
+      }
+
+      function renderSelection() {
+        const tokens = sequence();
+        state.selected = Math.min(state.selected, tokens.length - 1);
+        const promptLength = promptData().prompt.length;
+        const current = state.selected === tokens.length - 1;
+        const kind = state.selected < promptLength ? "prompt token" : "generated token";
+        $("#selected-token").textContent = selectedTokenLabel(tokens[state.selected], state.selected);
+        $("#selected-state").textContent = "K/V retained";
+        $("#selected-detail").textContent = `Stored in all ${MODEL.layers} layers`;
+        $("#selected-meta").textContent = `position ${state.selected + 1} · ${kind}`;
+        $("#selected-copy").innerHTML = current
+          ? "<var>Q</var> is used for this decode step, then discarded. <var>K</var> and <var>V</var> remain available to later tokens."
+          : "Later queries read this stored <var>K</var>/<var>V</var> pair without projecting the token again.";
+      }
+
+      function renderStatus() {
+        const tokens = sequence();
+        const length = tokens.length;
+        const prefill = state.generated === 0;
+        const currentToken = tokens[length - 1];
+        if (prefill) {
+          $("#status").textContent = `Prefill computes ${length} prompt K/V pairs once in both tracks.`;
+          $("#step-reading").textContent = `prefill · ${length} tokens`;
+          $("#caption-lead").textContent = "Prefill.";
+          $("#caption-lead").nextSibling.textContent = " Both paths project the prompt once.";
+        } else if (state.animating) {
+          $("#status").textContent = `Appending “${currentToken}”: recompute ${length} positions above, project 1 below.`;
+          $("#step-reading").textContent = `decode ${state.generated} · ${length} tokens`;
+          $("#caption-lead").textContent = "Decode.";
+          $("#caption-lead").nextSibling.textContent = ` The cache holds ${length - 1} pairs still and appends one.`;
+        } else {
+          $("#status").textContent = `${length - 1} historical K/V pairs reused; “${currentToken}” is now cached.`;
+          $("#step-reading").textContent = `decode ${state.generated} · ${length} tokens`;
+          $("#caption-lead").textContent = "Reuse.";
+          $("#caption-lead").nextSibling.textContent = ` History stays put while one K/V pair joins the cache.`;
+        }
+        const complete = state.generated >= maxGenerated() && !state.animating;
+        $("#status").classList.toggle("complete", complete);
+        $("#sequence-count").textContent = `${length} positions`;
+      }
+
+      function render() {
+        renderControls();
+        renderTracks();
+        renderCosts();
+        renderMemory();
+        renderSelection();
+        renderStatus();
+      }
+
+      function clearTimers() {
+        state.timers.forEach(clearTimeout);
+        state.timers = [];
+      }
+
+      function stopRun() {
+        clearTimers();
+        state.running = false;
+        state.animating = false;
+      }
+
+      function reset(renderNow = true) {
+        stopRun();
+        state.generated = 0;
+        state.selected = promptData().prompt.length - 1;
+        if (renderNow) render();
+      }
+
+      function advance() {
+        if (state.generated >= maxGenerated()) return;
+        state.generated += 1;
+        state.selected = currentLength() - 1;
+        state.animating = true;
+        render();
+        state.timers.push(setTimeout(() => {
+          state.animating = false;
+          render();
+        }, REDUCED_MOTION ? 40 : 580));
+      }
+
+      function step() {
+        stopRun();
+        if (state.generated >= maxGenerated()) reset();
+        else advance();
+      }
+
+      function run() {
+        stopRun();
+        if (state.generated >= maxGenerated()) reset(false);
+        state.running = true;
+        render();
+        const pace = REDUCED_MOTION ? 100 : 980;
+        const tick = () => {
+          if (!state.running) return;
+          if (state.generated >= maxGenerated()) {
+            state.running = false;
+            render();
+            return;
+          }
+          advance();
+          state.timers.push(setTimeout(tick, pace));
+        };
+        tick();
+      }
+
+      $$(".prompt-choice").forEach(button => button.addEventListener("click", () => {
+        state.promptKey = button.dataset.prompt;
+        reset();
+      }));
+      $$(".arch-choice").forEach(button => button.addEventListener("click", () => {
+        stopRun();
+        state.architecture = button.dataset.arch;
+        render();
+      }));
+      $("#run").addEventListener("click", run);
+      $("#step").addEventListener("click", step);
+      $("#reset").addEventListener("click", () => reset());
+      document.addEventListener("keydown", event => {
+        if (event.defaultPrevented) return;
+        const interactive = event.target.closest("button, a, input, textarea, select, [contenteditable='true']");
+        if (event.code === "Space" && !event.repeat && !interactive) {
+          event.preventDefault();
+          step();
+        }
+      });
+
+      render();
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries on this page. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>

@@ -29,7 +29,7 @@ Peek LLM 是一个开源的大模型交互知识可视化项目。它不要求�
 - [Embeddings](embeddings/index.html) — 由 [Embedding Studio](embeddings/embedding-studio.html) 开启：基于 4,000 个真实 GPT-2 词向量的 3D 工作台。
 - [Attention](attention/index.html) — 由 [Attention Studio](attention/attention-studio.html) 开启：覆盖全部 12 层 × 12 头的真实 GPT-2 注意力图工作台。
 - [Logits &amp; Sampling](logits-and-sampling/index.html) — 由 [Sampling Studio](logits-and-sampling/sampling-studio.html) 开启：基于真实 GPT-2 下一 token logits 的概率轮盘工作台，支持 temperature、top-k 与 top-p 调节。
-- KV Cache — 开发中。
+- [KV Cache](kv-cache/index.html) — 由 [KV Cache Studio](kv-cache/kv-cache-studio.html) 开启：使用计算型解码轨迹对比全历史 K/V 重算与只追加复用，并测算 MHA、GQA 和 MQA 的缓存内存。
 
 训练系列从让模型能够学习的参数更新规则开始：
 

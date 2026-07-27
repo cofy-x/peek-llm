@@ -39,6 +39,10 @@ Exhibits teach through images, motion, and play — text is only a signpost.
 - Prefer animations, manipulable visuals, and small games over paragraphs. Keep prose to one-line signposts per section.
 - Prefer real or model-derived data (clearly labeled) over invented toy data when it materially improves credibility; document how any embedded data was produced and filtered.
 - Keep one consistent visual language: the same color should mean the same thing across sections of an exhibit.
+- Design for the full state space, not only the initial view. At initial, representative intermediate, and terminal or maximum-density states, keep the current subject, primary comparison, and terminal conclusion visible without clipping.
+- Give growing collections an explicit density strategy. Prefer semantic compression, grouping, or aggregation of repeated history before shrinking meaningful content or making horizontal scrolling the primary way to discover the current state.
+- Use connectors, arrows, paths, and overlays that imply data relationships, direction, or flow only when that meaning helps the learner and is clear from placement, labels, or a legend. Structural layout chrome such as panels and frame borders does not need to encode data semantics. Do not let relationship marks cross content in a way that suggests an unintended flow.
+- Present raw strings and selected data values unambiguously. Visually distinguish punctuation, whitespace, control characters, and special tokens; keep item identity separate from position, type, state, and other metadata when concatenation could be misread.
 
 ## Layout shells and visual identity
 
@@ -65,7 +69,7 @@ A concept directory may offer the same exhibit in more than one shell (see `toke
 
 ## Mathematics
 
-Preserve non-trivial mathematical expressions in TeX/LaTeX syntax, for example in a nearby comment or `data-tex` attribute. Write static formulas directly as semantic MathML. When formulas must change interactively, inline only the renderer, CSS, and fonts required for offline operation.
+Preserve non-trivial mathematical expressions in TeX/LaTeX syntax, for example in a nearby comment or `data-tex` attribute. Write static formulas directly as semantic MathML. Use semantic prose markup such as `<var>` for isolated variables, and keep tensor shapes or literal program data as code rather than forcing them into math notation. When formulas must change interactively, inline only the renderer, CSS, and fonts required for offline operation.
 
 Keep the source expression available for copying or inspection, emit accessible semantic output, and explain symbols, dimensions, and units near the formula. Do not use a screenshot or other raster image as the only representation of an equation.
 
@@ -97,18 +101,20 @@ The validator does not treat dormant network APIs inside a declared vendor scrip
 ## Review checklist
 
 1. Open the file directly with a `file://` URL, keep the browser offline, and complete the core explanation and primary interaction.
-2. Test keyboard navigation, touch-sized controls, a narrow viewport, and reduced motion. At wide and narrow layouts, confirm that each dense panel has a clear focal item and does not render all headings, readings, and emphasized prose at maximum contrast.
-3. Verify that the animation and displayed numbers agree with the explanation.
-4. If the exhibit has an optional network feature, test its disclosure, learner-controlled activation, success, failure, and offline fallback.
-5. Confirm that the exhibit is the directly maintained source, contains no generated code from first-party tooling, and has no external runtime resources.
-6. Run:
+2. Exercise the initial, representative intermediate, and terminal or maximum-density states. Confirm that the current subject, primary comparison, and terminal conclusion remain visible without clipping.
+3. Test keyboard navigation, touch-sized controls, wide and narrow layouts, and reduced motion. Confirm that each dense panel has one clear focal cluster and does not render all headings, readings, and emphasized prose at maximum contrast.
+4. Check relationship marks and raw-value presentation: every connector or directional overlay must have a clear meaning, and punctuation, whitespace, control characters, and special tokens must remain unambiguous.
+5. Verify that the animation and displayed numbers agree with the explanation.
+6. If the exhibit has an optional network feature, test its disclosure, learner-controlled activation, success, failure, and offline fallback.
+7. Confirm that the exhibit is the directly maintained source, contains no generated code from first-party tooling, and has no external runtime resources.
+8. Run:
 
 ```bash
 python3 scripts/check.py
 python3 -m unittest discover -s tests
 ```
 
-7. Keep concept changes, tooling changes, and unrelated cleanup in separate commits.
+9. Keep concept changes, tooling changes, and unrelated cleanup in separate commits.
 
 ## Licensing
 

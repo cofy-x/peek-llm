@@ -29,7 +29,7 @@ The first collection builds an intuitive path through five concepts — tokeniza
 - [Embeddings](embeddings/index.html) — opened by [Embedding Studio](embeddings/embedding-studio.html), a 3D workbench over 4,000 real GPT-2 word vectors.
 - [Attention](attention/index.html) — opened by [Attention Studio](attention/attention-studio.html), a workbench over real GPT-2 attention maps from all 12 layers × 12 heads.
 - [Logits &amp; Sampling](logits-and-sampling/index.html) — opened by [Sampling Studio](logits-and-sampling/sampling-studio.html), a probability-wheel workbench over real GPT-2 next-token logits with temperature, top-k, and top-p.
-- KV cache — in development.
+- [KV Cache](kv-cache/index.html) — opened by [KV Cache Studio](kv-cache/kv-cache-studio.html), a computed decoding workbench that compares full-history K/V recomputation with append-only reuse and measures MHA, GQA, and MQA cache memory.
 
 The training collection starts from the update rule that lets a model learn:
 
