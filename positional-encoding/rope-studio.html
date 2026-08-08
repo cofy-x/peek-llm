@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive Peek LLM studio for rotary positional encoding: move query and key positions through three computed rotation bands and see relative phase remain invariant under a shared shift.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
+  <title>RoPE Studio — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efece4; --ink: #2e2b25; --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78); --muted: #716c5f; --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18); --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f; --accent-ink: #7c4c1f; --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8; --amber: #b45309; --rose: #b03a52; --green: #4a7c43;
+      --blue: #3e6da8; --radius: 6px; --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; overflow: hidden; display: grid; grid-template-rows: auto 1fr; line-height: 1.55; background: var(--bg); }
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
+
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+
+    .workbench { display: grid; grid-template-columns: 270px minmax(520px, 1fr) 320px; min-height: 0; }
+    aside, .stage { min-height: 0; overflow-y: auto; }
+    .rail { padding: 16px 20px 22px; }
+    .rail { overflow-x: hidden; }
+    .rail-left { border-right: 1px solid var(--line); }
+    .rail-right { border-left: 1px solid var(--line); }
+    .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .pane-label { display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px; background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line); color: var(--ink); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
+
+    button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: 600 12px/1 inherit; font-family: inherit; letter-spacing: 0.075em; text-transform: uppercase; cursor: pointer; }
+    button:hover { border-color: var(--ink); }
+    button[aria-pressed="true"], button.primary { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-ink); }
+    button.primary { background: var(--accent); color: var(--panel); }
+    button:disabled { opacity: 0.42; cursor: default; }
+    .button-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .button-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .button-grid button { min-width: 0; padding-inline: 7px; }
+    .button-row { display: flex; gap: 8px; }
+    .button-row button { flex: 1; }
+    .hint { margin: 11px 0 0; color: var(--muted); font-size: 13px; }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
+
+    .control { margin-top: 15px; }
+    .control-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; color: var(--ink-subtle); font-size: 13px; }
+    .control-head output { color: var(--ink-soft); font: 600 15px var(--font-mono); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; margin: 10px 0 0; accent-color: var(--accent); }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font: 500 10px var(--font-mono); }
+    .legend { display: grid; gap: 8px; color: var(--ink-subtle); font-size: 12.5px; }
+    .legend span { display: flex; align-items: center; gap: 9px; }
+    .legend i { width: 28px; height: 2px; background: var(--accent); }
+    .legend .key { background: var(--violet); }
+    .legend .phase { height: 1px; border-top: 1px dashed var(--green); background: none; }
+
+    .stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; overflow: hidden; padding: 14px 20px 16px; }
+    .stage-toolbar, .stage-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12.5px; }
+    .status-line { display: flex; align-items: center; gap: 9px; margin: 0; color: var(--ink-subtle); }
+    .status-line::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .status-line.invariant::before { background: var(--green); }
+    .mode-reading { font: 500 12px var(--font-mono); white-space: nowrap; }
+    .mode-reading math { font-size: 14px; }
+    .stage-caption strong { color: var(--ink-soft); font-weight: 600; }
+    .frame { position: relative; min-height: 0; border: 1px solid var(--line); background:
+      linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px,
+      linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px,
+      var(--panel); background-repeat: no-repeat; }
+    .rope-stage { display: grid; grid-template-rows: auto minmax(380px, 1fr) auto; padding: 14px 16px 16px; overflow: hidden; }
+    .plate-note { margin: 0; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+    .canvas-wrap { position: relative; min-height: 380px; }
+    canvas { display: block; width: 100%; height: 100%; min-height: 380px; touch-action: manipulation; cursor: pointer; }
+    .canvas-legend { position: absolute; top: 8px; right: 4px; display: flex; gap: 13px; padding: 4px 6px; background: rgba(248, 246, 240, 0.86); color: var(--muted); font-size: 10.5px; }
+    .canvas-legend span { display: flex; align-items: center; gap: 5px; }
+    .canvas-legend i { width: 18px; height: 2px; background: var(--accent); }
+    .canvas-legend .key { background: var(--violet); }
+    .canvas-legend .phase { height: 1px; border-top: 1px dashed var(--green); background: none; }
+
+    .relative-strip { padding: 10px 8px 2px; border-top: 1px solid var(--line); }
+    .relative-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 9px; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+    .relative-head b { color: var(--ink-soft); font: 600 13px var(--font-mono); letter-spacing: 0; text-transform: none; }
+    .relative-head b math { font-size: 15px; }
+    .position-track { position: relative; height: 42px; margin: 0 13px; }
+    .position-track::before { content: ""; position: absolute; left: 0; right: 0; top: 18px; height: 1px; background: var(--line-strong); }
+    .position-ticks { position: absolute; inset: 15px 0 auto; display: grid; grid-template-columns: repeat(13, 1fr); }
+    .position-ticks i { width: 1px; height: 7px; justify-self: center; background: var(--line-strong); }
+    .position-marker { position: absolute; top: 3px; transform: translateX(-50%); min-width: 30px; padding: 3px 6px; border-radius: 3px; color: var(--panel); text-align: center; font: 600 11px var(--font-mono); transition: left 360ms var(--ease); }
+    .position-marker.key { background: var(--violet); }
+    .position-marker.query { top: 24px; background: var(--accent); }
+    .distance-line { position: absolute; top: 18px; height: 2px; background: linear-gradient(90deg, var(--violet), var(--accent)); transition: left 360ms var(--ease), width 360ms var(--ease); }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .stat { min-height: 96px; padding: 12px 13px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .stat b { display: block; color: var(--ink-soft); font: 600 25px/1.05 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .stat.focus b { color: var(--green); }
+    .stat span { display: block; margin-top: 7px; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .band-focus { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+    .band-orbit { width: 58px; height: 58px; border: 1px solid var(--line-strong); border-radius: 50%; display: grid; place-items: center; color: var(--accent-ink); font: 600 12px var(--font-mono); background: var(--accent-wash); }
+    .band-orbit math { font-size: 16px; }
+    .inspector-focus { margin: 0; color: var(--ink); font: 600 18px/1.25 var(--font-mono); }
+    .inspector-reading { margin: 2px 0 0; color: var(--ink-soft); font: 600 15px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .inspector-meta { margin: 4px 0 0; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .inspector-copy { margin: 12px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .inspector-copy strong { color: var(--ink-soft); font-weight: 600; }
+    .formula-box, .proof-box { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow-x: auto; }
+    .formula-box math { font-size: 18px; }
+    .proof-box { display: grid; gap: 8px; }
+    .proof-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline; color: var(--muted); font-size: 12px; }
+    .proof-row b { color: var(--ink-soft); font: 600 13px var(--font-mono); }
+    .proof-row b math { font-size: 15px; }
+    .proof-equal { padding-top: 8px; border-top: 1px solid var(--line); color: var(--green); font-size: 12.5px; font-weight: 600; }
+    .source-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+    .source-list li + li { margin-top: 6px; }
+
+    @media (max-width: 1120px) {
+      body { overflow: auto; display: block; }
+      .workbench { grid-template-columns: 1fr; }
+      aside, .stage { overflow: visible; }
+      .rail-left, .rail-right { border: 0; }
+      .rail-left { border-bottom: 1px solid var(--line); }
+      .rail-right { border-top: 1px solid var(--line); }
+      .stage { min-height: 720px; }
+      .rail-left { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      .rail-left section + section { margin: 0; padding: 0; border: 0; }
+      .rail-right { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      .rail-right section + section { margin: 0; padding: 0; border: 0; }
+    }
+    @media (max-width: 680px) {
+      header.top > .label { display: none; }
+      .rail-left, .rail-right { display: block; }
+      .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+      .stage { min-height: 650px; padding-inline: 10px; }
+      .rope-stage { padding-inline: 10px; }
+      .canvas-wrap, canvas { min-height: 430px; }
+      .stage-toolbar, .stage-caption { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .canvas-legend { right: 0; gap: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Positional Encoding</a>
+    </div>
+    <p class="label">Studio · Computed RoPE geometry</p>
+    <p class="fig-no">Fig. 1</p>
+  </header>
+
+  <div class="workbench">
+    <aside class="rail rail-left" aria-labelledby="controls-title">
+      <section>
+        <h2 class="pane-label" id="controls-title">Relative distance</h2>
+        <div class="button-grid">
+          <button class="preset" type="button" data-key="5" data-query="6" aria-label="Adjacent positions, 1 step apart" aria-pressed="true">1 step</button>
+          <button class="preset" type="button" data-key="3" data-query="6" aria-label="Nearby positions, 3 steps apart" aria-pressed="false">3 steps</button>
+          <button class="preset" type="button" data-key="0" data-query="9" aria-label="Far positions, 9 steps apart" aria-pressed="false">9 steps</button>
+        </div>
+        <p class="hint"><b>Start here.</b> Move K and Q apart; each dimension pair turns at a different speed.</p>
+        <div class="control">
+          <div class="control-head"><label for="key-position">Key position <var>n</var></label><output id="key-output">5</output></div>
+          <input id="key-position" type="range" min="0" max="12" step="1" value="5">
+          <div class="range-ends"><span>0</span><span>12</span></div>
+        </div>
+        <div class="control">
+          <div class="control-head"><label for="query-position">Query position <var>m</var></label><output id="query-output">6</output></div>
+          <input id="query-position" type="range" min="0" max="12" step="1" value="6">
+          <div class="range-ends"><span>0</span><span>12</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Position signal</h2>
+        <div class="button-grid two">
+          <button class="mode-choice" type="button" data-mode="none" aria-pressed="false">No position</button>
+          <button class="mode-choice" type="button" data-mode="rope" aria-pressed="true">RoPE</button>
+        </div>
+        <p class="hint" id="mode-note">RoPE rotates every 2D pair by position × frequency before Q meets K.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Inspect a pair</h2>
+        <div class="button-grid">
+          <button class="band-choice" type="button" data-band="0" aria-pressed="true">Fast</button>
+          <button class="band-choice" type="button" data-band="1" aria-pressed="false">Medium</button>
+          <button class="band-choice" type="button" data-band="2" aria-pressed="false">Slow</button>
+        </div>
+        <p class="hint">Select a plane here or tap it in the visualization.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Test invariance</h2>
+        <div class="button-row">
+          <button class="primary" id="shift" type="button">Shift both +1</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <p class="hint">Both absolute angles change. Their relative phase does not.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Read the geometry</h2>
+        <div class="legend">
+          <span><i></i> query Q at position <var>m</var></span>
+          <span><i class="key"></i> key K at position <var>n</var></span>
+          <span><i class="phase"></i> relative phase between them</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-toolbar">
+        <p class="status-line" id="status" aria-live="polite">One step apart: the fast pair separates most visibly.</p>
+        <span class="mode-reading" id="mode-reading">RoPE · <math aria-label="delta equals positive 1" data-tex="\Delta=+1"><mrow><mi>Δ</mi><mo>=</mo><mo>+</mo><mn>1</mn></mrow></math></span>
+      </div>
+      <section class="frame rope-stage" aria-labelledby="stage-title">
+        <p class="plate-note" id="stage-title">Computed teaching vectors · three representative dimension pairs</p>
+        <div class="canvas-wrap">
+          <canvas id="rope-canvas" tabindex="0" role="img" aria-label="Three perspective rotation planes showing query at position 6 and key at position 5. Their relative offset is 1."></canvas>
+          <div class="canvas-legend" aria-hidden="true">
+            <span><i></i>Q</span><span><i class="key"></i>K</span><span><i class="phase"></i>relative phase</span>
+          </div>
+        </div>
+        <div class="relative-strip">
+          <div class="relative-head"><span>Sequence positions</span><b id="gap-reading"><math aria-label="delta equals m minus n equals positive 1" data-tex="\Delta=m-n=+1"><mrow><mi>Δ</mi><mo>=</mo><mi>m</mi><mo>−</mo><mi>n</mi><mo>=</mo><mo>+</mo><mn>1</mn></mrow></math></b></div>
+          <div class="position-track" aria-hidden="true">
+            <div class="position-ticks"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <span class="distance-line" id="distance-line"></span>
+            <span class="position-marker key" id="key-marker">K·5</span>
+            <span class="position-marker query" id="query-marker">Q·6</span>
+          </div>
+        </div>
+      </section>
+      <div class="stage-caption">
+        <span><strong id="caption-lead">Relative rotation.</strong> The dot product can now respond to distance.</span>
+        <span>Tap a plane to inspect its frequency.</span>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-labelledby="inspector-title">
+      <section>
+        <h2 class="pane-label">Current comparison</h2>
+        <div class="stats">
+          <div class="stat focus"><b id="delta-reading">+1</b><span>relative offset Δ</span></div>
+          <div class="stat"><b id="score-reading">0.845</b><span>mean paired cosine</span></div>
+          <div class="stat"><b id="query-angle">6.000</b><span>fast Q angle · rad</span></div>
+          <div class="stat"><b id="key-angle">5.000</b><span>fast K angle · rad</span></div>
+        </div>
+        <p class="hint">The score is a compact teaching measure across the three displayed pairs, not a trained model attention weight.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label" id="inspector-title">Selected dimension pair</h2>
+        <div class="band-focus">
+          <div class="band-orbit" id="band-symbol">
+            <math aria-label="dimensions d 0 and d 1" data-tex="d_0,d_1"><mrow><msub><mi>d</mi><mn>0</mn></msub><mo>,</mo><msub><mi>d</mi><mn>1</mn></msub></mrow></math>
+          </div>
+          <div>
+            <p class="inspector-focus" id="band-name">Fast rotation</p>
+            <p class="inspector-reading" id="band-frequency"><math aria-label="theta 0 equals 1 radian per position" data-tex="\theta_0=1.00"><mrow><msub><mi>θ</mi><mn>0</mn></msub><mo>=</mo><mn>1.00</mn></mrow></math> rad / position</p>
+            <p class="inspector-meta" id="band-phase">relative phase +1.000 rad</p>
+          </div>
+        </div>
+        <p class="inspector-copy" id="band-copy"><strong>Fast pair.</strong> Nearby positions separate quickly, making local order easy to distinguish.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Why a shared shift cancels</h2>
+        <div class="formula-box">
+          <math display="block" aria-label="rotated query at m dot rotated key at n equals query transpose rotation n minus m times key" data-tex="(R_m q)^T(R_n k)=q^T R_{n-m}k">
+            <mrow><msup><mrow><mo>(</mo><msub><mi>R</mi><mi>m</mi></msub><mi>q</mi><mo>)</mo></mrow><mi>T</mi></msup><mrow><mo>(</mo><msub><mi>R</mi><mi>n</mi></msub><mi>k</mi><mo>)</mo></mrow><mo>=</mo><msup><mi>q</mi><mi>T</mi></msup><msub><mi>R</mi><mrow><mi>n</mi><mo>−</mo><mi>m</mi></mrow></msub><mi>k</mi></mrow>
+          </math>
+        </div>
+        <div class="proof-box">
+          <div class="proof-row"><span>before shift</span><b id="proof-before"><math aria-label="m minus n equals 1" data-tex="m-n=1"><mrow><mi>m</mi><mo>−</mo><mi>n</mi><mo>=</mo><mn>1</mn></mrow></math></b></div>
+          <div class="proof-row"><span>after both +1</span><b id="proof-after"><math aria-label="open parenthesis m plus 1 close parenthesis minus open parenthesis n plus 1 close parenthesis equals 1" data-tex="(m+1)-(n+1)=1"><mrow><mo>(</mo><mi>m</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>−</mo><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><mn>1</mn></mrow></math></b></div>
+          <div class="proof-equal" id="proof-result">Same relative phase · same score</div>
+        </div>
+        <p class="inspector-copy"><strong>Core idea.</strong> RoPE does not store distance in one vector. Distance appears when a rotated query is compared with a rotated key.</p>
+      </section>
+
+      <section>
+        <h2 class="pane-label">Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://arxiv.org/abs/2104.09864" rel="noreferrer">RoFormer: Enhanced Transformer with Rotary Position Embedding</a></li>
+          <li><a href="https://arxiv.org/abs/1706.03762" rel="noreferrer">Attention Is All You Need</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const TAU = Math.PI * 2;
+      const MAX_POSITION = 12;
+      const BANDS = [
+        { name: "Fast rotation", dimensions: [0, 1], theta: 1, copy: "Nearby positions separate quickly, making local order easy to distinguish." },
+        { name: "Medium rotation", dimensions: [2, 3], theta: 0.1, copy: "This pair changes more gently and carries position across a broader span." },
+        { name: "Slow rotation", dimensions: [4, 5], theta: 0.01, copy: "Long wavelengths barely move locally, preserving coarse positional structure." }
+      ];
+      const state = { key: 5, query: 6, mode: "rope", band: 0, fromKey: 5, fromQuery: 6, visualKey: 5, visualQuery: 6, fromMode: 1, visualMode: 1, animationStart: 0, shifted: false };
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+      const canvas = $("#rope-canvas");
+      const context = canvas.getContext("2d");
+      let frame = 0;
+      let cssWidth = 0;
+      let cssHeight = 0;
+
+      function relativeOffset() { return state.query - state.key; }
+      function rotation(position, theta, visual = false) {
+        const amount = visual ? state.visualMode : (state.mode === "rope" ? 1 : 0);
+        return position * theta * amount;
+      }
+      function pairedScore() {
+        if (state.mode === "none") return 1;
+        const delta = relativeOffset();
+        return BANDS.reduce((sum, band) => sum + Math.cos(delta * band.theta), 0) / BANDS.length;
+      }
+      function signed(value, digits = 0) {
+        const fixed = Math.abs(value).toFixed(digits);
+        return `${value >= 0 ? "+" : "−"}${fixed}`;
+      }
+      function dimensionPairMath(band) {
+        const [first, second] = band.dimensions;
+        return `<math aria-label="dimensions d ${first} and d ${second}" data-tex="d_${first},d_${second}"><mrow><msub><mi>d</mi><mn>${first}</mn></msub><mo>,</mo><msub><mi>d</mi><mn>${second}</mn></msub></mrow></math>`;
+      }
+      function resultMath(value, explicitPlus = false) {
+        if (value < 0) return `<mo>−</mo><mn>${Math.abs(value)}</mn>`;
+        if (explicitPlus && value > 0) return `<mo>+</mo><mn>${value}</mn>`;
+        return `<mn>${value}</mn>`;
+      }
+      function deltaMath(delta) {
+        const spoken = delta > 0 ? `positive ${delta}` : delta < 0 ? `negative ${Math.abs(delta)}` : "0";
+        const texValue = delta > 0 ? `+${delta}` : String(delta);
+        return `<math aria-label="delta equals ${spoken}" data-tex="\\Delta=${texValue}"><mrow><mi>Δ</mi><mo>=</mo>${resultMath(delta, true)}</mrow></math>`;
+      }
+      function relativeOffsetMath(delta) {
+        const spoken = delta > 0 ? `positive ${delta}` : delta < 0 ? `negative ${Math.abs(delta)}` : "0";
+        const texValue = delta > 0 ? `+${delta}` : String(delta);
+        return `<math aria-label="delta equals m minus n equals ${spoken}" data-tex="\\Delta=m-n=${texValue}"><mrow><mi>Δ</mi><mo>=</mo><mi>m</mi><mo>−</mo><mi>n</mi><mo>=</mo>${resultMath(delta, true)}</mrow></math>`;
+      }
+      function shiftProofMath(delta, shifted) {
+        const spoken = delta < 0 ? `negative ${Math.abs(delta)}` : String(delta);
+        const texValue = String(delta);
+        if (!shifted) return `<math aria-label="m minus n equals ${spoken}" data-tex="m-n=${texValue}"><mrow><mi>m</mi><mo>−</mo><mi>n</mi><mo>=</mo>${resultMath(delta)}</mrow></math>`;
+        return `<math aria-label="open parenthesis m plus 1 close parenthesis minus open parenthesis n plus 1 close parenthesis equals ${spoken}" data-tex="(m+1)-(n+1)=${texValue}"><mrow><mo>(</mo><mi>m</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>−</mo><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo>${resultMath(delta)}</mrow></math>`;
+      }
+      function ease(t) { return 1 - Math.pow(1 - t, 3); }
+      function ellipsePoint(cx, cy, rx, ry, angle) {
+        return { x: cx + Math.cos(angle) * rx, y: cy + Math.sin(angle) * ry };
+      }
+      function colorWithAlpha(color, alpha) {
+        const colors = { accent: `rgba(161,100,47,${alpha})`, violet: `rgba(111,99,184,${alpha})`, green: `rgba(74,124,67,${alpha})`, ink: `rgba(46,43,37,${alpha})` };
+        return colors[color];
+      }
+
+      function resizeCanvas() {
+        const box = canvas.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        cssWidth = Math.max(320, box.width);
+        cssHeight = Math.max(380, box.height);
+        canvas.width = Math.round(cssWidth * ratio);
+        canvas.height = Math.round(cssHeight * ratio);
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        draw();
+      }
+
+      function drawArrow(cx, cy, rx, ry, angle, length, color, label, alpha) {
+        const end = ellipsePoint(cx, cy, rx * length, ry * length, angle);
+        const direction = Math.atan2(end.y - cy, end.x - cx);
+        const headLength = 12;
+        const headWidth = 6;
+        const baseX = end.x - Math.cos(direction) * headLength;
+        const baseY = end.y - Math.sin(direction) * headLength;
+        const normalX = -Math.sin(direction) * headWidth;
+        const normalY = Math.cos(direction) * headWidth;
+        context.save();
+        context.strokeStyle = colorWithAlpha(color, alpha);
+        context.fillStyle = colorWithAlpha(color, alpha);
+        context.lineWidth = color === "accent" ? 3 : 2.5;
+        context.lineCap = "butt";
+        context.beginPath(); context.moveTo(cx, cy); context.lineTo(baseX, baseY); context.stroke();
+        context.beginPath();
+        context.moveTo(end.x, end.y);
+        context.lineTo(baseX + normalX, baseY + normalY);
+        context.lineTo(baseX - normalX, baseY - normalY);
+        context.closePath(); context.fill();
+        context.font = "600 12px ui-monospace, monospace";
+        context.fillText(label, end.x + 10, end.y + (Math.sin(angle) > 0 ? 14 : -7));
+        context.restore();
+      }
+
+      function drawPhaseArc(cx, cy, rx, ry, start, end, alpha) {
+        let difference = end - start;
+        while (difference > Math.PI) difference -= TAU;
+        while (difference < -Math.PI) difference += TAU;
+        const steps = 32;
+        context.save();
+        context.strokeStyle = colorWithAlpha("green", alpha);
+        context.lineWidth = 1.5;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        for (let index = 0; index <= steps; index += 1) {
+          const angle = start + difference * index / steps;
+          const point = ellipsePoint(cx, cy, rx * 0.48, ry * 0.48, angle);
+          if (index === 0) context.moveTo(point.x, point.y); else context.lineTo(point.x, point.y);
+        }
+        context.stroke();
+        context.restore();
+      }
+
+      function drawPlane(index, y, spacing) {
+        const band = BANDS[index];
+        const selected = index === state.band;
+        const alpha = selected ? 1 : 0.46;
+        const rx = Math.min(cssWidth * 0.31, 245) * (selected ? 1 : 0.93);
+        const ry = Math.max(34, Math.min(54, spacing * 0.28)) * (selected ? 1 : 0.93);
+        const cx = cssWidth * 0.52;
+        const queryAngle = rotation(state.visualQuery, band.theta, true) - Math.PI / 2;
+        const keyAngle = rotation(state.visualKey, band.theta, true) - Math.PI / 2;
+
+        context.save();
+        context.fillStyle = selected ? "rgba(161,100,47,0.035)" : "rgba(46,43,37,0.012)";
+        context.beginPath(); context.ellipse(cx, y, rx, ry, 0, 0, TAU); context.fill();
+        context.strokeStyle = selected ? "rgba(46,43,37,0.26)" : "rgba(46,43,37,0.13)";
+        context.lineWidth = selected ? 1.4 : 1;
+        context.beginPath(); context.ellipse(cx, y, rx, ry, 0, 0, TAU); context.stroke();
+        context.strokeStyle = "rgba(46,43,37,0.10)";
+        context.beginPath(); context.moveTo(cx - rx, y); context.lineTo(cx + rx, y); context.stroke();
+        context.beginPath(); context.moveTo(cx, y - ry); context.lineTo(cx, y + ry); context.stroke();
+        for (let tick = 0; tick < 12; tick += 1) {
+          const angle = tick / 12 * TAU;
+          const outer = ellipsePoint(cx, y, rx, ry, angle);
+          const inner = ellipsePoint(cx, y, rx * 0.96, ry * 0.96, angle);
+          context.beginPath(); context.moveTo(inner.x, inner.y); context.lineTo(outer.x, outer.y); context.stroke();
+        }
+
+        drawPhaseArc(cx, y, rx, ry, keyAngle, queryAngle, selected ? 0.9 : 0.42);
+        drawArrow(cx, y, rx, ry, keyAngle, 0.68, "violet", "K", alpha);
+        drawArrow(cx, y, rx, ry, queryAngle, 0.9, "accent", "Q", alpha);
+
+        context.fillStyle = selected ? "rgba(46,43,37,0.88)" : "rgba(46,43,37,0.50)";
+        context.font = `italic ${selected ? 15 : 14}px Georgia, serif`;
+        context.textAlign = "right";
+        const [firstDimension, secondDimension] = band.dimensions;
+        context.fillText(`d${String.fromCharCode(0x2080 + firstDimension)}, d${String.fromCharCode(0x2080 + secondDimension)}`, cx - rx - 18, y - 4);
+        context.font = "500 10px ui-monospace, monospace";
+        context.fillStyle = selected ? "rgba(113,108,95,0.95)" : "rgba(113,108,95,0.55)";
+        context.fillText(`θ = ${band.theta.toFixed(2)}`, cx - rx - 18, y + 13);
+        context.textAlign = "left";
+        const phase = state.mode === "rope" ? relativeOffset() * band.theta : 0;
+        context.fillText(`Δφ ${signed(phase, band.theta < 0.1 ? 3 : 2)} rad`, cx + rx + 18, y + 3);
+        context.restore();
+      }
+
+      function draw() {
+        context.clearRect(0, 0, cssWidth, cssHeight);
+        context.save();
+        context.strokeStyle = "rgba(46,43,37,0.055)";
+        context.lineWidth = 1;
+        for (let x = 20; x < cssWidth; x += 44) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, cssHeight); context.stroke(); }
+        for (let y = 28; y < cssHeight; y += 44) { context.beginPath(); context.moveTo(0, y); context.lineTo(cssWidth, y); context.stroke(); }
+        const top = 92;
+        const bottom = cssHeight - 54;
+        const spacing = (bottom - top) / 2;
+        const cx = cssWidth * 0.52;
+        context.strokeStyle = "rgba(46,43,37,0.13)";
+        context.setLineDash([3, 5]);
+        context.beginPath(); context.moveTo(cx, top - 45); context.lineTo(cx, bottom + 42); context.stroke();
+        context.setLineDash([]);
+        BANDS.forEach((band, index) => drawPlane(index, top + spacing * index, spacing));
+        context.restore();
+      }
+
+      function animate(timestamp) {
+        const duration = REDUCED_MOTION ? 1 : 520;
+        const progress = Math.min(1, (timestamp - state.animationStart) / duration);
+        const amount = ease(progress);
+        state.visualKey = state.fromKey + (state.key - state.fromKey) * amount;
+        state.visualQuery = state.fromQuery + (state.query - state.fromQuery) * amount;
+        state.visualMode = state.fromMode + ((state.mode === "rope" ? 1 : 0) - state.fromMode) * amount;
+        draw();
+        if (progress < 1) frame = requestAnimationFrame(animate);
+      }
+
+      function startAnimation(previousKey, previousQuery, previousMode = state.visualMode) {
+        cancelAnimationFrame(frame);
+        state.fromKey = previousKey;
+        state.fromQuery = previousQuery;
+        state.visualKey = previousKey;
+        state.visualQuery = previousQuery;
+        state.fromMode = previousMode;
+        state.visualMode = previousMode;
+        state.animationStart = performance.now();
+        frame = requestAnimationFrame(animate);
+      }
+
+      function renderTrack() {
+        const keyPercent = state.key / MAX_POSITION * 100;
+        const queryPercent = state.query / MAX_POSITION * 100;
+        const left = Math.min(keyPercent, queryPercent);
+        const width = Math.abs(queryPercent - keyPercent);
+        $("#key-marker").style.left = `${keyPercent}%`;
+        $("#query-marker").style.left = `${queryPercent}%`;
+        $("#key-marker").textContent = `K·${state.key}`;
+        $("#query-marker").textContent = `Q·${state.query}`;
+        $("#distance-line").style.left = `${left}%`;
+        $("#distance-line").style.width = `${width}%`;
+      }
+
+      function renderInspector() {
+        const delta = relativeOffset();
+        const band = BANDS[state.band];
+        const phase = state.mode === "rope" ? delta * band.theta : 0;
+        $("#delta-reading").textContent = signed(delta);
+        $("#score-reading").textContent = pairedScore().toFixed(3);
+        $("#query-angle").textContent = rotation(state.query, BANDS[0].theta).toFixed(3);
+        $("#key-angle").textContent = rotation(state.key, BANDS[0].theta).toFixed(3);
+        $("#band-symbol").innerHTML = dimensionPairMath(band);
+        $("#band-name").textContent = band.name;
+        $("#band-frequency").innerHTML = `<math aria-label="theta ${state.band} equals ${band.theta.toFixed(2)} radians per position" data-tex="\\theta_${state.band}=${band.theta.toFixed(2)}"><mrow><msub><mi>θ</mi><mn>${state.band}</mn></msub><mo>=</mo><mn>${band.theta.toFixed(2)}</mn></mrow></math> rad / position`;
+        $("#band-phase").textContent = `relative phase ${signed(phase, band.theta < 0.1 ? 3 : 2)} rad`;
+        $("#band-copy").innerHTML = `<strong>${band.name.replace(" rotation", " pair")}.</strong> ${band.copy}`;
+        $("#proof-before").innerHTML = shiftProofMath(delta, false);
+        $("#proof-after").innerHTML = shiftProofMath(delta, true);
+        $("#proof-result").textContent = state.mode === "rope" ? "Same relative phase · same score" : "No rotation · distance remains invisible";
+      }
+
+      function renderStatus() {
+        const delta = relativeOffset();
+        const absolute = Math.abs(delta);
+        const status = $("#status");
+        status.classList.toggle("invariant", state.shifted);
+        if (state.mode === "none") {
+          status.textContent = `${absolute} position${absolute === 1 ? "" : "s"} apart, but the vectors do not change.`;
+          $("#caption-lead").textContent = "No position signal.";
+          $("#caption-lead").nextSibling.textContent = " Equal content vectors stay equal everywhere.";
+        } else if (state.shifted) {
+          status.textContent = `Both moved; Δ stayed ${signed(delta)} and every relative phase stayed fixed.`;
+          $("#caption-lead").textContent = "Shift invariant.";
+          $("#caption-lead").nextSibling.textContent = " Absolute angles move together; their comparison does not.";
+        } else if (absolute === 0) {
+          status.textContent = "Same position: Q and K align in every displayed pair.";
+          $("#caption-lead").textContent = "Zero relative rotation.";
+          $("#caption-lead").nextSibling.textContent = " Matching positions share the same phase.";
+        } else {
+          status.textContent = `${absolute} step${absolute === 1 ? "" : "s"} apart: the fast pair separates most visibly.`;
+          $("#caption-lead").textContent = "Relative rotation.";
+          $("#caption-lead").nextSibling.textContent = " The dot product can now respond to distance.";
+        }
+        $("#mode-reading").innerHTML = `${state.mode === "rope" ? "RoPE" : "No position"} · ${deltaMath(delta)}`;
+        $("#gap-reading").innerHTML = relativeOffsetMath(delta);
+        canvas.setAttribute("aria-label", `Three perspective rotation planes showing query at position ${state.query} and key at position ${state.key}. Their relative offset is ${delta}. ${state.mode === "rope" ? "RoPE rotation is active." : "Position rotation is disabled."}`);
+      }
+
+      function renderControls() {
+        $("#key-position").value = state.key;
+        $("#query-position").value = state.query;
+        $("#key-output").textContent = state.key;
+        $("#query-output").textContent = state.query;
+        $$(".preset").forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.key) === state.key && Number(button.dataset.query) === state.query)));
+        $$(".mode-choice").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode)));
+        $$(".band-choice").forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.band) === state.band)));
+        $("#shift").disabled = Math.max(state.key, state.query) >= MAX_POSITION;
+        $("#mode-note").textContent = state.mode === "rope"
+          ? "RoPE rotates every 2D pair by position × frequency before Q meets K."
+          : "Without a position operation, equal content vectors look identical at every index.";
+      }
+
+      function render() {
+        renderControls();
+        renderTrack();
+        renderInspector();
+        renderStatus();
+        draw();
+      }
+
+      function setPositions(key, query, shifted = false) {
+        const previousKey = state.visualKey;
+        const previousQuery = state.visualQuery;
+        state.key = Math.max(0, Math.min(MAX_POSITION, key));
+        state.query = Math.max(0, Math.min(MAX_POSITION, query));
+        state.shifted = shifted;
+        render();
+        startAnimation(previousKey, previousQuery);
+      }
+
+      $$(".preset").forEach(button => button.addEventListener("click", () => {
+        setPositions(Number(button.dataset.key), Number(button.dataset.query));
+      }));
+      $$(".mode-choice").forEach(button => button.addEventListener("click", () => {
+        const previousMode = state.visualMode;
+        state.mode = button.dataset.mode;
+        state.shifted = false;
+        render();
+        startAnimation(state.visualKey, state.visualQuery, previousMode);
+      }));
+      $$(".band-choice").forEach(button => button.addEventListener("click", () => {
+        state.band = Number(button.dataset.band);
+        render();
+      }));
+      $("#key-position").addEventListener("input", event => setPositions(Number(event.target.value), state.query));
+      $("#query-position").addEventListener("input", event => setPositions(state.key, Number(event.target.value)));
+      $("#shift").addEventListener("click", () => {
+        if (Math.max(state.key, state.query) < MAX_POSITION) setPositions(state.key + 1, state.query + 1, true);
+      });
+      $("#reset").addEventListener("click", () => {
+        state.mode = "rope";
+        state.band = 0;
+        setPositions(5, 6);
+      });
+      canvas.addEventListener("click", event => {
+        const box = canvas.getBoundingClientRect();
+        const y = event.clientY - box.top;
+        const top = 92;
+        const bottom = box.height - 54;
+        const spacing = (bottom - top) / 2;
+        const closest = Math.max(0, Math.min(2, Math.round((y - top) / spacing)));
+        state.band = closest;
+        render();
+      });
+      canvas.addEventListener("keydown", event => {
+        if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+          event.preventDefault(); state.band = Math.min(2, state.band + 1); render();
+        } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+          event.preventDefault(); state.band = Math.max(0, state.band - 1); render();
+        }
+      });
+      window.addEventListener("resize", resizeCanvas);
+
+      render();
+      resizeCanvas();
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries on this page. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>

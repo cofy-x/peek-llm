@@ -275,18 +275,23 @@
             <h3>Embeddings</h3>
             <p>Where integer IDs become vectors the model can compute with — orbit 4,000 real GPT-2 word vectors in a 3D studio.</p>
           </a>
-          <a class="card concept" href="attention/index.html">
+          <a class="card concept" href="positional-encoding/index.html">
             <small>Concept 03</small>
+            <h3>Positional Encoding</h3>
+            <p>Give vectors a sense of order — rotate query and key dimension pairs, then shift both positions and watch relative distance survive.</p>
+          </a>
+          <a class="card concept" href="attention/index.html">
+            <small>Concept 04</small>
             <h3>Attention</h3>
             <p>How tokens look at each other — hover real GPT-2 attention maps across 12 layers and 12 heads.</p>
           </a>
           <a class="card concept" href="logits-and-sampling/index.html">
-            <small>Concept 04</small>
+            <small>Concept 05</small>
             <h3>Logits &amp; Sampling</h3>
             <p>How the model turns 50,257 scores into one token — bend real GPT-2 logits with temperature, top-k, and top-p, then throw the dart.</p>
           </a>
           <a class="card concept" href="kv-cache/index.html">
-            <small>Concept 05</small>
+            <small>Concept 06</small>
             <h3>KV Cache</h3>
             <p>Decode one token at a time, compare full-history K/V recomputation with append-only reuse, and see how MHA, GQA, and MQA change cache memory.</p>
           </a>
@@ -295,7 +300,7 @@
         <div class="collection-intro" id="training">
           <p class="eyebrow">Training collection</p>
           <h3>See how the model learns.</h3>
-          <p>Training alternates between computing a prediction and changing the parameters that produced it. Explore the update rule, then trace the forward computation it improves.</p>
+          <p>Training alternates between computing a prediction and changing the parameters that produced it. Explore the update rule, trace the forward computation it improves, then follow the error as it travels backward.</p>
         </div>
         <div class="grid concept-grid">
           <a class="card concept" href="gradient-descent/index.html">
@@ -307,6 +312,11 @@
             <small>Training 02</small>
             <h3>Forward Pass</h3>
             <p>Shape a tiny hidden state, follow every weighted contribution through ReLU, and watch three token logits become one probability distribution.</p>
+          </a>
+          <a class="card concept" href="backpropagation/index.html">
+            <small>Training 03</small>
+            <h3>Backpropagation</h3>
+            <p>Send the cross-entropy error backward through the same tiny MLP — p − y at the logits, through the ReLU gate, to a gradient for every weight.</p>
           </a>
         </div>
       </section>
@@ -324,7 +334,7 @@
 
     <footer>
       <span>Peek LLM · An open-source Cofy-X project</span>
-      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="attention/index.html">Concept 03: Attention</a> · <a href="logits-and-sampling/index.html">Concept 04: Logits &amp; Sampling</a> · <a href="kv-cache/index.html">Concept 05: KV Cache</a> · <a href="gradient-descent/index.html">Training 01: Gradient Descent</a> · <a href="forward-pass/index.html">Training 02: Forward Pass</a></span>
+      <span><a href="tokenization/index.html">Concept 01: Tokenization</a> · <a href="embeddings/index.html">Concept 02: Embeddings</a> · <a href="positional-encoding/index.html">Concept 03: Positional Encoding</a> · <a href="attention/index.html">Concept 04: Attention</a> · <a href="logits-and-sampling/index.html">Concept 05: Logits &amp; Sampling</a> · <a href="kv-cache/index.html">Concept 06: KV Cache</a> · <a href="gradient-descent/index.html">Training 01: Gradient Descent</a> · <a href="forward-pass/index.html">Training 02: Forward Pass</a> · <a href="backpropagation/index.html">Training 03: Backpropagation</a></span>
     </footer>
   </div>
 

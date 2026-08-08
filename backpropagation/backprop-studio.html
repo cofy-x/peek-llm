@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive Peek LLM studio for sending cross-entropy error backward through a computed tiny MLP — from p − y at the logits, through the ReLU gate, to a gradient for every weight. Self-contained HTML, works offline.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23efece4'/%3E%3Cpath d='M9 32s8.5-14 23-14 23 14 23 14-8.5 14-23 14S9 32 9 32Z' fill='none' stroke='%23a1642f' stroke-width='5'/%3E%3Crect x='22' y='22' width='20' height='20' rx='3' fill='%23a1642f'/%3E%3C/svg%3E">
+  <title>Backprop Studio — Peek LLM</title>
+  <!-- BEGIN THIRD-PARTY STYLES — keep each licensed library in its own data-peek-vendor block. -->
+  <!-- END THIRD-PARTY STYLES -->
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #efece4;
+      --ink: #2e2b25;
+      --ink-soft: rgba(46, 43, 37, 0.84);
+      --ink-subtle: rgba(46, 43, 37, 0.78);
+      --muted: #716c5f;
+      --panel: #f8f6f0;
+      --line: rgba(46, 43, 37, 0.18);
+      --line-strong: rgba(46, 43, 37, 0.42);
+      --accent: #a1642f;
+      --accent-ink: #7c4c1f;
+      --accent-wash: rgba(161, 100, 47, 0.09);
+      --violet: #6f63b8;
+      --amber: #b45309;
+      --rose: #b03a52;
+      --green: #4a7c43;
+      --blue: #3e6da8;
+      --radius: 6px;
+      --ease: cubic-bezier(.2, .8, .2, 1);
+      --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { height: 100%; }
+    body { margin: 0; line-height: 1.55; overflow: hidden; display: grid; grid-template-rows: auto 1fr; background: var(--bg); }
+    a { color: var(--accent-ink); }
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid rgba(161, 100, 47, 0.55); outline-offset: 2px; }
+    #network [tabindex],
+    #network [tabindex]:focus,
+    #network [tabindex]:focus-visible { outline: none !important; }
+
+    /* ================= Chrome and workbench ================= */
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; width: 100%; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+    .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-family: var(--font-serif); font-weight: 700; font-size: 17px; letter-spacing: 0.01em; text-decoration: none; }
+    .brand svg { width: 20px; height: 20px; color: var(--accent); }
+    .crumb-sep { color: var(--line-strong); }
+    .concept-link { color: var(--muted); font-size: 13.5px; text-decoration: none; }
+    .concept-link:hover { color: var(--ink); }
+    .label { margin: 0; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
+    .fig-no { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: 15px; color: var(--ink); }
+    .workbench { display: grid; grid-template-columns: 286px minmax(0, 1fr) 330px; min-height: 0; }
+    aside, .stage { min-height: 0; overflow-y: auto; }
+    .rail { padding: 16px 20px 20px; }
+    .rail-left { border-right: 1px solid var(--line); }
+    .rail-right { border-left: 1px solid var(--line); }
+    .rail section + section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .pane-label { display: flex; align-items: center; margin: 0 0 12px; padding: 6px 10px; background: rgba(46, 43, 37, 0.06); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink); }
+    .rail-right .pane-label { background: rgba(46, 43, 37, 0.045); color: var(--ink-subtle); letter-spacing: 0.115em; }
+    .stage { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 10px; overflow: hidden; padding: 16px 24px 14px; }
+    .stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .phase-track { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .phase-chip { padding: 4px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); font: 500 10.5px var(--font-mono); letter-spacing: 0.04em; }
+    .phase-chip.done { color: var(--ink-subtle); border-color: var(--line-strong); }
+    .phase-chip.current { color: var(--accent-ink); border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+    .frame { position: relative; min-height: 0; border: 1px solid var(--line); background: linear-gradient(var(--line-strong), var(--line-strong)) left top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right top / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1.5px 16px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 16px 1.5px, linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1.5px 16px, var(--panel); background-repeat: no-repeat; }
+    .network-wrap { min-height: 390px; height: 100%; position: relative; }
+    .network-wrap::before { content: "COMPUTED TEACHING NETWORK · 4 → 3 → 3 → LOSS"; position: absolute; left: 18px; top: 14px; z-index: 1; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: 0.12em; }
+    #network { display: block; width: 100%; height: 100%; min-height: 390px; }
+    .stage-caption { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 12.5px; }
+    .stage-caption strong { color: var(--ink-soft); font-weight: 600; }
+    button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line-strong); border-radius: 3px; background: transparent; color: var(--ink); font: 600 12px/1 inherit; font-family: inherit; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    button:hover { border-color: var(--ink); }
+    button.primary { border-color: transparent; background: var(--accent); color: #f8f6f0; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .target-choice { padding: 0 6px; letter-spacing: 0.04em; }
+    .preset[aria-pressed="true"], .target-choice[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
+    .hint { margin: 12px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .hint b { color: var(--accent-ink); font-weight: 600; }
+
+    /* ================= Inputs and readings ================= */
+    .slider-row { margin-top: 13px; }
+    .slider-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .slider-head label { color: var(--ink-subtle); font-size: 13px; }
+    .slider-head output { color: var(--ink-soft); font: 600 13px var(--font-mono); font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; height: 20px; margin: 3px 0 0; accent-color: var(--accent); }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font: 500 10px var(--font-mono); }
+    .legend { display: grid; gap: 8px; color: var(--ink-subtle); font-size: 12.5px; }
+    .legend span { display: flex; align-items: center; gap: 8px; }
+    .legend i { display: inline-block; width: 28px; height: 2px; background: var(--blue); }
+    .legend .negative { background: var(--rose); }
+    .legend .gradient { background: var(--amber); height: 4px; }
+    .legend .raise { width: 12px; height: 12px; border: 2px solid var(--green); border-radius: 50%; background: transparent; }
+    .legend .target-key { width: 12px; height: 12px; border: 2px solid var(--accent); border-radius: 50%; background: transparent; }
+    .status-line { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-subtle); font-size: 13px; }
+    .status-line::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .status-line.complete::before { background: var(--green); }
+    .loss-reading { margin: 0; color: var(--ink); font: 600 24px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .loss-meta { margin: 4px 0 12px; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .distribution { display: grid; gap: 10px; }
+    .token-row { display: grid; grid-template-columns: 66px minmax(0, 1fr) 48px; gap: 9px; align-items: center; }
+    .token-row .token { color: var(--ink-soft); font: 600 13px var(--font-mono); }
+    .token-row .track { display: block; height: 8px; overflow: hidden; border-radius: 99px; background: rgba(46, 43, 37, 0.08); }
+    .token-row .fill { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--muted); transition: width 420ms var(--ease); }
+    .token-row .value { color: var(--muted); text-align: right; font: 500 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+    .token-row.is-target .token, .token-row.is-target .value { color: var(--ink); }
+    .token-row.is-target .fill { background: var(--accent); }
+    .inspector-focus { margin: 0 0 4px; color: var(--ink); font: 600 18px/1.25 var(--font-mono); }
+    .inspector-reading { margin: 0; color: var(--ink-soft); font: 600 16px/1.35 var(--font-mono); font-variant-numeric: tabular-nums; }
+    .inspector-meta { margin: 4px 0 0; color: var(--muted); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+    .inspector-copy { margin: 11px 0 0; color: var(--ink-subtle); font-size: 13px; }
+    .inspector-copy strong { color: var(--ink-soft); font-weight: 600; }
+    .formula-box { margin-top: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow-x: auto; }
+    .formula-box math { display: block; font-family: var(--font-serif); font-size: 18px; }
+    .calculation { margin: 10px 0 0; color: var(--ink-soft); font: 500 11.5px/1.6 var(--font-mono); overflow-wrap: anywhere; }
+    .contrib-list { display: grid; gap: 5px; margin-top: 10px; }
+    .contrib-head { display: grid; grid-template-columns: 58px 56px 1fr; gap: 7px; margin-top: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .contrib-head span:nth-child(2), .contrib-head span:nth-child(3) { text-align: right; }
+    .contrib-row { display: grid; grid-template-columns: 58px 56px 1fr; gap: 7px; color: var(--muted); font: 500 11px var(--font-mono); }
+    .contrib-row span:nth-child(2) { text-align: right; }
+    .contrib-row b { color: var(--ink-soft); font-weight: 600; text-align: right; }
+    .source-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; }
+    .source-list li + li { margin-top: 6px; }
+
+    /* ================= SVG network ================= */
+    .layer-label { fill: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-anchor: middle; }
+    .layer-rule { stroke: var(--line); stroke-width: 1; }
+    .loss-link { fill: none; stroke: var(--muted); stroke-width: 1.2; opacity: 0.22; transition: opacity 300ms var(--ease); }
+    .loss-link.live { opacity: 0.55; }
+    .loss-link.flow { opacity: 0.9; stroke: var(--amber); stroke-width: 1.8; stroke-dasharray: 7 6; animation: grad-flow 850ms linear infinite; }
+    .edge { cursor: pointer; }
+    .edge .hit { stroke: transparent; stroke-width: 15; }
+    .edge .wire { fill: none; stroke-linecap: round; transition: opacity 250ms var(--ease), stroke-width 250ms var(--ease); }
+    .edge.positive .wire { stroke: var(--blue); }
+    .edge.negative .wire { stroke: var(--rose); }
+    .edge.forward-dim .wire { opacity: 0.16 !important; }
+    .edge.forward-live .wire { opacity: 0.5; }
+    .edge .grad-wire { fill: none; stroke: var(--amber); stroke-linecap: round; opacity: 0; transition: opacity 250ms var(--ease), stroke-width 250ms var(--ease); pointer-events: none; }
+    .edge.grad-available .grad-wire { opacity: 0.5; }
+    .edge.grad-active .grad-wire { opacity: 0.95; stroke-dasharray: 9 7; animation: grad-flow 850ms linear infinite; }
+    .edge.selected .selection-wire { stroke: var(--violet); opacity: 1; }
+    .selection-wire { fill: none; opacity: 0; pointer-events: none; }
+    body.keyboard-nav .edge:focus .wire { opacity: 1 !important; }
+    .node { cursor: pointer; }
+    .node circle { fill: var(--panel); stroke: var(--line-strong); stroke-width: 1.5; transition: opacity 240ms var(--ease), stroke 240ms var(--ease), fill 240ms var(--ease), transform 240ms var(--ease); transform-box: fill-box; transform-origin: center; }
+    .node .node-id { fill: var(--ink-soft); font-family: var(--font-mono); font-size: 14px; font-weight: 600; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+    .node .node-value { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+    .node .node-grad { fill: var(--accent-ink); font-family: var(--font-mono); font-size: 11px; font-weight: 600; text-anchor: middle; pointer-events: none; }
+    .node.grad-raise .node-grad { fill: var(--green); }
+    .node.grad-lower .node-grad { fill: var(--rose); }
+    .node .node-caption { fill: var(--muted); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+    .node.current circle { stroke: var(--accent); fill: var(--accent-wash); transform: scale(1.06); }
+    .node.winner circle { stroke: var(--green); fill: rgba(74, 124, 67, 0.07); stroke-width: 2.2; }
+    .node.target circle { stroke: var(--accent); stroke-width: 2.5; }
+    .node.gate-open circle { stroke: var(--green); stroke-width: 2.2; }
+    .node.gate-closed circle { stroke: var(--rose); stroke-width: 2; stroke-dasharray: 4 4; }
+    .node.selected circle { stroke: var(--violet); stroke-width: 2.5; }
+    body.keyboard-nav .node:focus circle { stroke: var(--accent); stroke-width: 2.5; }
+    @keyframes grad-flow { to { stroke-dashoffset: 32; } }
+
+    @media (max-width: 1100px) { .workbench { grid-template-columns: 260px minmax(0, 1fr) 300px; } .rail { padding-inline: 16px; } .stage { padding-inline: 16px; } }
+    @media (max-width: 900px) {
+      body { overflow: auto; display: block; }
+      .workbench { grid-template-columns: 1fr; }
+      aside, .stage { overflow: visible; }
+      .rail-left, .rail-right { border: 0; }
+      .rail-left { border-bottom: 1px solid var(--line); }
+      .rail-right { border-top: 1px solid var(--line); }
+      .stage { min-height: 600px; }
+      .network-wrap, #network { min-height: 470px; }
+    }
+    @media (max-width: 560px) { header.top > .label { display: none; } .stage { padding-inline: 10px; } .network-wrap, #network { min-height: 420px; } .stage-caption { flex-direction: column; gap: 2px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-delay: 0ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="breadcrumbs">
+      <a class="brand" href="../index.html" aria-label="Back to Peek LLM home">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.5-5.4 9.5-5.4 9.5 5.4 9.5 5.4-3.5 5.4-9.5 5.4S2.5 12 2.5 12Z" stroke="currentColor" stroke-width="1.8"/><rect x="8.2" y="8.2" width="7.6" height="7.6" rx="1.2" fill="currentColor" stroke="none"/></svg>
+        Peek LLM
+      </a>
+      <span class="crumb-sep" aria-hidden="true">/</span>
+      <a class="concept-link" href="./index.html">Backpropagation</a>
+    </div>
+    <p class="label">Studio · Computed tiny MLP gradients</p>
+    <p class="fig-no">Fig. 1</p>
+  </header>
+
+  <div class="workbench">
+    <aside class="rail rail-left" aria-labelledby="controls-title">
+      <section>
+        <h2 class="pane-label" id="controls-title">Target token</h2>
+        <div class="button-row" aria-label="Target token choices">
+          <button class="target-choice" type="button" data-target="0" aria-pressed="true">river</button>
+          <button class="target-choice" type="button" data-target="1" aria-pressed="false">street</button>
+          <button class="target-choice" type="button" data-target="2" aria-pressed="false">garden</button>
+        </div>
+        <p class="hint"><b>Start here.</b> Choose what the network should have said, then send the error backward.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Hidden-state input</h2>
+        <div class="button-grid" aria-label="Input presets">
+          <button class="preset" type="button" data-preset="context" aria-pressed="true">Context</button>
+          <button class="preset" type="button" data-preset="contrast" aria-pressed="false">Contrast</button>
+          <button class="preset" type="button" data-preset="quiet" aria-pressed="false">Quiet</button>
+          <button class="preset" type="button" data-preset="flipped" aria-pressed="false">Flipped</button>
+        </div>
+        <div id="sliders"></div>
+        <p class="hint">Gradients depend on the forward values — reshape the input and every ∂L/∂w moves.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Trace the backward pass</h2>
+        <div class="button-row">
+          <button class="primary" id="run" type="button">Run</button>
+          <button id="step" type="button">Step</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <p class="hint">Run plays the whole backward pass. Step pauses at every stage; press <b>Space</b> to advance.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Learning rate</h2>
+        <div class="slider-row" style="margin-top:0;">
+          <div class="slider-head"><label for="lr">η for update preview</label><output id="lr-out" for="lr">0.20</output></div>
+          <input id="lr" type="range" min="0.05" max="1" step="0.05" value="0.2" aria-label="Learning rate for the update preview">
+          <div class="range-ends"><span>0.05</span><span>1.00</span></div>
+        </div>
+        <p class="hint">Select any weight to preview one gradient-descent update: w′ = w − η·∂L/∂w.</p>
+      </section>
+      <section>
+        <h2 class="pane-label">Read the diagram</h2>
+        <div class="legend">
+          <span><i></i> positive weight</span>
+          <span><i class="negative"></i> negative weight</span>
+          <span><i class="gradient"></i> gradient flow, thicker = larger |∂L/∂w|</span>
+          <span><i class="target-key"></i> target token</span>
+          <span><i class="raise"></i> prediction the forward pass favored</span>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-toolbar">
+        <p class="status-line" id="status" aria-live="polite">The forward pass has finished; probabilities are ready.</p>
+        <div class="phase-track" id="phase-track" aria-label="Backward pass stages"></div>
+      </div>
+      <section class="frame network-wrap" aria-label="Tiny MLP network diagram with loss node">
+        <svg id="network" viewBox="0 0 920 500" role="group" aria-labelledby="network-title network-desc">
+          <title id="network-title">A computed four by three by three neural network with a loss node</title>
+          <desc id="network-desc">The forward pass ends in three token probabilities and a cross-entropy loss. The backward pass sends error signals from the loss back through every wire to produce a gradient for each weight. Select a node or wire to inspect its chain-rule calculation.</desc>
+          <g id="layer-guides" aria-hidden="true"></g>
+          <g id="loss-links" aria-hidden="true"></g>
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </section>
+      <div class="stage-caption">
+        <span><strong id="caption-lead">Forward.</strong> The same computed teaching network as Forward Pass Studio ends in a loss.</span>
+        <span>Select any node or wire to inspect it.</span>
+      </div>
+    </main>
+
+    <aside class="rail rail-right" aria-labelledby="inspector-title">
+      <section>
+        <h2 class="pane-label">Loss and distribution</h2>
+        <p class="loss-reading" id="loss-reading">L = —</p>
+        <p class="loss-meta" id="loss-meta">cross-entropy · target “river”</p>
+        <div class="distribution" id="distribution"></div>
+        <p class="hint" id="distribution-note">Probabilities come from the forward pass.</p>
+      </section>
+      <section>
+        <h2 class="pane-label" id="inspector-title">Selected unit</h2>
+        <p class="inspector-focus" id="selection-title">loss L</p>
+        <p class="inspector-reading" id="selection-reading">waiting for the loss phase</p>
+        <p class="inspector-meta" id="selection-meta">cross-entropy</p>
+        <p class="inspector-copy" id="selection-copy"><strong>One number to minimize.</strong> Every gradient on this page is the loss asking one weight: how much did you contribute?</p>
+        <div class="formula-box">
+          <math display="block" aria-label="partial L over partial w sub j i equals delta sub j times x sub i" data-tex="\frac{\partial L}{\partial w_{ji}} = \delta_j \cdot x_i">
+            <mrow><mfrac><mrow><mo>∂</mo><mi>L</mi></mrow><mrow><mo>∂</mo><msub><mi>w</mi><mrow><mi>j</mi><mi>i</mi></mrow></msub></mrow></mfrac><mo>=</mo><msub><mi>δ</mi><mi>j</mi></msub><mo>·</mo><msub><mi>x</mi><mi>i</mi></msub></mrow>
+          </math>
+        </div>
+        <p class="calculation" id="calculation"></p>
+        <div class="contrib-head" id="contrib-head" aria-hidden="true"><span>signal</span><span>local</span><span>result</span></div>
+        <div class="contrib-list" id="contributions"></div>
+      </section>
+      <section>
+        <h2 class="pane-label">What is computed</h2>
+        <p class="inspector-copy"><strong>Teaching network.</strong> The weights are fixed by hand so every forward value and gradient is reproducible. This is not a trace from a trained language model.</p>
+        <div class="formula-box">
+          <math display="block" aria-label="L equals minus ln p sub t, and delta sub k equals p sub k minus y sub k" data-tex="L = -\ln p_t,\quad \delta_k = p_k - y_k">
+            <mrow><mi>L</mi><mo>=</mo><mo>−</mo><mi mathvariant="normal">ln</mi><msub><mi>p</mi><mi>t</mi></msub><mo>,</mo><mspace width="1em"/><msub><mi>δ</mi><mi>k</mi></msub><mo>=</mo><msub><mi>p</mi><mi>k</mi></msub><mo>−</mo><msub><mi>y</mi><mi>k</mi></msub></mrow>
+          </math>
+        </div>
+      </section>
+      <section>
+        <h2 class="pane-label">Sources</h2>
+        <ul class="source-list">
+          <li><a href="https://cs231n.github.io/optimization-2/" rel="noreferrer">CS231n · Backpropagation, Intuitions</a></li>
+          <li><a href="https://d2l.ai/chapter_multilayer-perceptrons/backprop.html" rel="noreferrer">Dive into Deep Learning · Forward Propagation, Backward Propagation, and Computational Graphs</a></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const PHASES = ["forward", "loss", "δ logits", "output grads", "ReLU gate", "hidden grads"];
+      const TOKENS = ["river", "street", "garden"];
+      const PRESETS = {
+        context: [0.80, -0.30, 0.65, 0.20],
+        contrast: [-0.50, 0.85, 0.25, -0.60],
+        quiet: [0.15, 0.05, -0.20, 0.35],
+        flipped: [-0.80, -0.60, -0.80, 0.90]
+      };
+      const W1 = [
+        [0.80, -0.40, 0.60, 0.20],
+        [-0.30, 0.90, 0.20, -0.50],
+        [0.40, 0.10, -0.70, 0.80]
+      ];
+      const B1 = [0.10, 0.05, -0.10];
+      const W2 = [
+        [0.90, -0.20, 0.40],
+        [-0.30, 0.80, 0.50],
+        [0.20, 0.40, 0.90]
+      ];
+      const B2 = [0.05, -0.05, 0.10];
+      const POSITIONS = {
+        input: [[100, 90], [100, 195], [100, 305], [100, 410]],
+        hidden: [[385, 130], [385, 250], [385, 370]],
+        output: [[650, 130], [650, 250], [650, 370]],
+        loss: [855, 250]
+      };
+      const state = {
+        x: [...PRESETS.context], target: 0, lr: 0.20, phase: 0, preset: "context",
+        running: false, timers: [], selection: { type: "loss" }
+      };
+      const $ = selector => document.querySelector(selector);
+      const $$ = selector => [...document.querySelectorAll(selector)];
+
+      function compute() {
+        const z = W1.map((row, j) => row.reduce((sum, w, i) => sum + w * state.x[i], B1[j]));
+        const h = z.map(value => Math.max(0, value));
+        const logits = W2.map((row, k) => row.reduce((sum, w, j) => sum + w * h[j], B2[k]));
+        const ceiling = Math.max(...logits);
+        const exps = logits.map(value => Math.exp(value - ceiling));
+        const denom = exps.reduce((sum, value) => sum + value, 0);
+        const p = exps.map(value => value / denom);
+        const t = state.target;
+        const L = -Math.log(p[t]);
+        const dlogits = p.map((value, k) => value - (k === t ? 1 : 0));
+        const dW2 = W2.map((row, k) => row.map((_, j) => dlogits[k] * h[j]));
+        const dh = h.map((_, j) => dlogits.reduce((sum, d, k) => sum + d * W2[k][j], 0));
+        const gate = z.map(value => (value > 0 ? 1 : 0));
+        const dz = dh.map((value, j) => value * gate[j]);
+        const dW1 = W1.map((row, j) => row.map((_, i) => dz[j] * state.x[i]));
+        const dx = state.x.map((_, i) => dz.reduce((sum, d, j) => sum + d * W1[j][i], 0));
+        return { z, h, logits, p, L, dlogits, dW2, dh, gate, dz, dW1, dx };
+      }
+
+      function fmt(value, digits = 2) {
+        const clean = Math.abs(value) < 0.0005 ? 0 : value;
+        return `${clean >= 0 ? "+" : "−"}${Math.abs(clean).toFixed(digits)}`;
+      }
+
+      function svgElement(name, attributes = {}) {
+        const element = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+        return element;
+      }
+
+      function buildControls() {
+        const sliders = $("#sliders");
+        state.x.forEach((value, index) => {
+          const row = document.createElement("div");
+          row.className = "slider-row";
+          row.innerHTML = `<div class="slider-head"><label for="x-${index}">activation x<sub>${index + 1}</sub></label><output id="x-${index}-out" for="x-${index}">${fmt(value)}</output></div><input id="x-${index}" type="range" min="-1" max="1" step="0.05" value="${value}" aria-label="Input activation x ${index + 1}"><div class="range-ends"><span>−1.00</span><span>+1.00</span></div>`;
+          sliders.append(row);
+          row.querySelector("input").addEventListener("input", event => {
+            stopRun();
+            state.x[index] = Number(event.target.value);
+            state.preset = null;
+            updatePresetButtons();
+            render();
+          });
+        });
+        $$(".preset").forEach(button => button.addEventListener("click", () => applyPreset(button.dataset.preset)));
+        $$(".target-choice").forEach(button => button.addEventListener("click", () => {
+          stopRun();
+          state.target = Number(button.dataset.target);
+          updateTargetButtons();
+          render();
+        }));
+        $("#lr").addEventListener("input", event => {
+          state.lr = Number(event.target.value);
+          $("#lr-out").textContent = state.lr.toFixed(2);
+          render();
+        });
+        $("#run").addEventListener("click", run);
+        $("#step").addEventListener("click", step);
+        $("#reset").addEventListener("click", resetAll);
+        document.addEventListener("keydown", event => {
+          if (event.defaultPrevented) return;
+          if (event.code === "Space" && !event.repeat && event.target.tagName !== "INPUT" && event.target.tagName !== "BUTTON") {
+            event.preventDefault();
+            step();
+          }
+        });
+      }
+
+      function buildPhaseTrack() {
+        PHASES.forEach((phase, index) => {
+          const chip = document.createElement("span");
+          chip.className = "phase-chip";
+          chip.dataset.phase = index;
+          chip.textContent = `${index + 1} ${phase}`;
+          $("#phase-track").append(chip);
+        });
+      }
+
+      function buildDistribution() {
+        TOKENS.forEach((token, index) => {
+          const row = document.createElement("div");
+          row.className = "token-row";
+          row.dataset.token = index;
+          row.innerHTML = `<span class="token">${token}</span><span class="track"><span class="fill"></span></span><span class="value">—</span>`;
+          $("#distribution").append(row);
+        });
+      }
+
+      function buildNetwork() {
+        const guides = $("#layer-guides");
+        [[100, "INPUT x"], [385, "MLP · ReLU"], [650, "TOKEN OUTPUT"], [855, "LOSS"]].forEach(([x, label]) => {
+          const text = svgElement("text", { x, y: 44, class: "layer-label" });
+          text.textContent = label;
+          guides.append(text);
+          guides.append(svgElement("line", { x1: x - 48, y1: 55, x2: x + 48, y2: 55, class: "layer-rule" }));
+        });
+        const links = $("#loss-links");
+        POSITIONS.output.forEach(([x, y]) => {
+          const startX = x + 35;
+          const endX = POSITIONS.loss[0] - 38;
+          const path = svgElement("path", { d: `M ${startX} ${y} Q ${(startX + endX) / 2} ${y} ${endX} ${POSITIONS.loss[1]}`, class: "loss-link" });
+          links.append(path);
+        });
+        W1.forEach((weights, to) => weights.forEach((weight, from) => createEdge("input", from, "hidden", to, weight, 5)));
+        W2.forEach((weights, to) => weights.forEach((weight, from) => createEdge("hidden", from, "output", to, weight, 3)));
+        POSITIONS.input.forEach((_, index) => createNode("input", index));
+        POSITIONS.hidden.forEach((_, index) => createNode("hidden", index));
+        POSITIONS.output.forEach((_, index) => createNode("output", index));
+        createLossNode();
+      }
+
+      function createEdge(fromLayer, from, toLayer, to, weight, gradPhase) {
+        const [x1, y1] = POSITIONS[fromLayer][from];
+        const [x2, y2] = POSITIONS[toLayer][to];
+        const fromRadius = fromLayer === "input" ? 27 : 31;
+        const toRadius = toLayer === "input" ? 27 : 31;
+        const width = 1.1 + Math.abs(weight) * 3.7;
+        const capClearance = (width + 4) / 2 + 1;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.hypot(dx, dy);
+        const ux = dx / distance;
+        const uy = dy / distance;
+        const startX = x1 + ux * (fromRadius + capClearance);
+        const startY = y1 + uy * (fromRadius + capClearance);
+        const endX = x2 - ux * (toRadius + capClearance);
+        const endY = y2 - uy * (toRadius + capClearance);
+        const group = svgElement("g", {
+          class: `edge ${weight >= 0 ? "positive" : "negative"}`,
+          tabindex: "0", role: "button",
+          "aria-label": `${fromLayer} ${from + 1} to ${toLayer} ${to + 1}, weight ${weight.toFixed(2)}`,
+          "data-from-layer": fromLayer, "data-from": from, "data-to-layer": toLayer, "data-to": to, "data-weight": weight, "data-grad-phase": gradPhase
+        });
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "hit" }));
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "selection-wire", "stroke-width": width + 4 }));
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "wire", "stroke-width": width }));
+        group.append(svgElement("line", { x1: startX, y1: startY, x2: endX, y2: endY, class: "grad-wire", "stroke-width": 2 }));
+        group.addEventListener("mousedown", event => event.preventDefault());
+        group.addEventListener("click", () => {
+          state.selection = { type: "edge", fromLayer, from, toLayer, to, weight };
+          render();
+          if (!document.body.classList.contains("keyboard-nav") && typeof group.blur === "function") group.blur();
+        });
+        group.addEventListener("keydown", event => activateWithKeyboard(event, () => {
+          state.selection = { type: "edge", fromLayer, from, toLayer, to, weight };
+          render();
+        }));
+        $("#edges").append(group);
+      }
+
+      function createNode(layer, index) {
+        const [x, y] = POSITIONS[layer][index];
+        const group = svgElement("g", { class: "node", transform: `translate(${x} ${y})`, tabindex: "0", role: "button", "data-layer": layer, "data-index": index });
+        group.append(svgElement("circle", { r: layer === "input" ? 27 : 31 }));
+        const id = svgElement("text", { y: -2, class: "node-id" });
+        id.textContent = layer === "input" ? `x${index + 1}` : layer === "hidden" ? `h${index + 1}` : TOKENS[index];
+        group.append(id);
+        const value = svgElement("text", { y: 45, class: "node-value" });
+        value.dataset.role = "value";
+        group.append(value);
+        const grad = svgElement("text", { y: 61, class: "node-grad" });
+        grad.dataset.role = "grad";
+        group.append(grad);
+        if (layer === "hidden") {
+          const caption = svgElement("text", { y: 12, class: "node-caption" });
+          caption.textContent = "ReLU";
+          group.append(caption);
+        }
+        group.addEventListener("mousedown", event => event.preventDefault());
+        group.addEventListener("click", () => {
+          state.selection = { type: "node", layer, index };
+          render();
+          if (!document.body.classList.contains("keyboard-nav") && typeof group.blur === "function") group.blur();
+        });
+        group.addEventListener("keydown", event => activateWithKeyboard(event, () => {
+          state.selection = { type: "node", layer, index };
+          render();
+        }));
+        $("#nodes").append(group);
+      }
+
+      function createLossNode() {
+        const [x, y] = POSITIONS.loss;
+        const group = svgElement("g", { class: "node", transform: `translate(${x} ${y})`, tabindex: "0", role: "button", "data-layer": "loss", "aria-label": "Cross-entropy loss" });
+        group.append(svgElement("circle", { r: 34 }));
+        const id = svgElement("text", { y: -2, class: "node-id" });
+        id.textContent = "L";
+        group.append(id);
+        const value = svgElement("text", { y: 51, class: "node-value" });
+        value.dataset.role = "value";
+        group.append(value);
+        const grad = svgElement("text", { y: 67, class: "node-grad" });
+        grad.dataset.role = "grad";
+        group.append(grad);
+        group.addEventListener("mousedown", event => event.preventDefault());
+        group.addEventListener("click", () => {
+          state.selection = { type: "loss" };
+          render();
+          if (!document.body.classList.contains("keyboard-nav") && typeof group.blur === "function") group.blur();
+        });
+        group.addEventListener("keydown", event => activateWithKeyboard(event, () => {
+          state.selection = { type: "loss" };
+          render();
+        }));
+        $("#nodes").append(group);
+      }
+
+      function activateWithKeyboard(event, callback) {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          callback();
+        }
+      }
+
+      function applyPreset(name) {
+        stopRun();
+        state.x = [...PRESETS[name]];
+        state.preset = name;
+        state.x.forEach((value, index) => { $("#x-" + index).value = value; });
+        updatePresetButtons();
+        render();
+      }
+
+      function resetAll() {
+        stopRun();
+        state.target = 0;
+        state.lr = 0.20;
+        state.phase = 0;
+        state.selection = { type: "loss" };
+        $("#lr").value = 0.2;
+        $("#lr-out").textContent = "0.20";
+        updateTargetButtons();
+        applyPreset("context");
+      }
+
+      function updatePresetButtons() {
+        $$(".preset").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.preset === state.preset)));
+      }
+
+      function updateTargetButtons() {
+        $$(".target-choice").forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.target) === state.target)));
+      }
+
+      function stopRun() {
+        state.timers.forEach(clearTimeout);
+        state.timers = [];
+        state.running = false;
+        $("#run").disabled = false;
+      }
+
+      function step() {
+        stopRun();
+        state.phase = state.phase >= PHASES.length - 1 ? 0 : state.phase + 1;
+        render();
+      }
+
+      function run() {
+        stopRun();
+        state.running = true;
+        state.phase = 0;
+        $("#run").disabled = true;
+        render();
+        const pace = REDUCED_MOTION ? 80 : 760;
+        [1, 2, 3, 4, 5].forEach((phase, index) => {
+          state.timers.push(setTimeout(() => {
+            state.phase = phase;
+            render();
+            if (phase === 5) {
+              state.running = false;
+              $("#run").disabled = false;
+            }
+          }, pace * (index + 1)));
+        });
+      }
+
+      function render() {
+        const values = compute();
+        state.x.forEach((value, index) => {
+          $("#x-" + index + "-out").textContent = fmt(value);
+        });
+        renderPhases();
+        renderLossLinks();
+        renderEdges(values);
+        renderNodes(values);
+        renderLossPanel(values);
+        renderInspector(values);
+        renderStatus(values);
+      }
+
+      function renderPhases() {
+        $$(".phase-chip").forEach((chip, index) => {
+          chip.className = "phase-chip";
+          if (index < state.phase) chip.classList.add("done");
+          if (index === state.phase) {
+            chip.classList.add("current");
+            chip.setAttribute("aria-current", "step");
+          } else {
+            chip.removeAttribute("aria-current");
+          }
+        });
+      }
+
+      function renderLossLinks() {
+        $$(".loss-link").forEach(link => {
+          link.classList.toggle("live", state.phase >= 1 && state.phase !== 2);
+          link.classList.toggle("flow", state.phase === 2);
+        });
+      }
+
+      function edgeGradient(edge, values) {
+        const from = Number(edge.dataset.from);
+        const to = Number(edge.dataset.to);
+        return edge.dataset.toLayer === "output" ? values.dW2[to][from] : values.dW1[to][from];
+      }
+
+      function renderEdges(values) {
+        $$(".edge").forEach(edge => {
+          const gradPhase = Number(edge.dataset.gradPhase);
+          edge.classList.toggle("forward-live", state.phase === 0);
+          edge.classList.toggle("forward-dim", state.phase > 0);
+          edge.classList.toggle("grad-active", state.phase === gradPhase);
+          edge.classList.toggle("grad-available", state.phase > gradPhase);
+          const gradient = edgeGradient(edge, values);
+          edge.querySelector(".grad-wire").setAttribute("stroke-width", (1.1 + Math.min(5.5, Math.abs(gradient) * 16)).toFixed(2));
+          const selection = state.selection;
+          const selected = selection.type === "edge" && selection.fromLayer === edge.dataset.fromLayer && selection.from === Number(edge.dataset.from) && selection.toLayer === edge.dataset.toLayer && selection.to === Number(edge.dataset.to);
+          edge.classList.toggle("selected", selected);
+        });
+      }
+
+      function renderNodes(values) {
+        const winner = values.p.indexOf(Math.max(...values.p));
+        $$(".node").forEach(node => {
+          const layer = node.dataset.layer;
+          const index = Number(node.dataset.index);
+          node.className.baseVal = "node";
+          const valueText = node.querySelector('[data-role="value"]');
+          const gradText = node.querySelector('[data-role="grad"]');
+          let gradLabel = "";
+          if (layer === "input") {
+            valueText.textContent = fmt(state.x[index]);
+            if (state.phase >= 5) gradLabel = `δx ${fmt(values.dx[index], 3)}`;
+            if (state.phase === 5) node.classList.add("current");
+          } else if (layer === "hidden") {
+            valueText.textContent = `h ${fmt(values.h[index])}`;
+            if (state.phase === 3) gradLabel = `δh ${fmt(values.dh[index], 3)}`;
+            if (state.phase >= 4) gradLabel = `δz ${fmt(values.dz[index], 3)}`;
+            if (state.phase === 3 || state.phase === 4) node.classList.add("current");
+            if (state.phase >= 4) node.classList.add(values.gate[index] ? "gate-open" : "gate-closed");
+          } else if (layer === "output") {
+            valueText.textContent = `${(values.p[index] * 100).toFixed(1)}%`;
+            if (state.phase >= 2) {
+              gradLabel = `δℓ ${fmt(values.dlogits[index], 3)}`;
+              node.classList.add(values.dlogits[index] < 0 ? "grad-raise" : "grad-lower");
+            }
+            if (state.phase === 2) node.classList.add("current");
+            if (state.phase === 0 && index === winner) node.classList.add("winner");
+            if (state.phase >= 1 && index === state.target) node.classList.add("target");
+          } else {
+            valueText.textContent = state.phase >= 1 ? `L ${values.L.toFixed(3)}` : "—";
+            if (state.phase >= 1) gradLabel = "∂L/∂L = 1";
+            if (state.phase === 1) node.classList.add("current");
+          }
+          gradText.textContent = gradLabel;
+          const selection = state.selection;
+          const selected = (selection.type === "loss" && layer === "loss") || (selection.type === "node" && selection.layer === layer && selection.index === index);
+          if (selected) node.classList.add("selected");
+        });
+      }
+
+      function renderLossPanel(values) {
+        const visible = state.phase >= 1;
+        $("#loss-reading").textContent = visible ? `L = ${values.L.toFixed(3)}` : "L = —";
+        $("#loss-meta").textContent = `cross-entropy · target “${TOKENS[state.target]}”`;
+        $$(".token-row").forEach((row, index) => {
+          row.classList.toggle("is-target", index === state.target);
+          row.querySelector(".fill").style.width = `${values.p[index] * 100}%`;
+          row.querySelector(".value").textContent = `${(values.p[index] * 100).toFixed(1)}%`;
+        });
+        $("#distribution-note").textContent = visible
+          ? `“${TOKENS[state.target]}” is the target — the smaller its probability, the larger the loss.`
+          : "Probabilities come from the forward pass; run to compute the loss.";
+      }
+
+      function renderInspector(values) {
+        const selection = state.selection;
+        const t = state.target;
+        const rows = [];
+        let title, reading, meta, copy, calculation;
+        if (selection.type === "loss") {
+          title = "loss L";
+          reading = state.phase < 1 ? "waiting for the loss phase" : `L = ${values.L.toFixed(3)}`;
+          meta = `cross-entropy · target “${TOKENS[t]}”`;
+          copy = `<strong>One number to minimize.</strong> Cross-entropy is the negative log of the target's probability; it falls only when that probability rises. The backward pass starts here, with ∂L/∂L = 1.`;
+          calculation = state.phase < 1 ? "Run or step to the Loss phase." : `−ln p_t = −ln(${values.p[t].toFixed(3)}) = ${values.L.toFixed(3)}`;
+          TOKENS.forEach((token, k) => rows.push([token, k === t ? "y 1" : "y 0", values.p[k].toFixed(3)]));
+        } else if (selection.type === "edge") {
+          const { fromLayer, from, toLayer, to, weight } = selection;
+          const gradPhase = toLayer === "output" ? 3 : 5;
+          const gradient = toLayer === "output" ? values.dW2[to][from] : values.dW1[to][from];
+          const signal = toLayer === "output" ? values.dlogits[to] : values.dz[to];
+          const carried = fromLayer === "input" ? state.x[from] : values.h[from];
+          const signalLabel = toLayer === "output" ? `δℓ${to + 1}` : `δz${to + 1}`;
+          const carriedLabel = fromLayer === "input" ? `x${from + 1}` : `h${from + 1}`;
+          title = `${carriedLabel} → ${toLayer === "output" ? "“" + TOKENS[to] + "”" : "h" + (to + 1)}`;
+          reading = state.phase < gradPhase ? `weight ${fmt(weight)}` : `∂L/∂w = ${fmt(gradient, 3)}`;
+          meta = toLayer === "output" ? "output-layer weight" : "hidden-layer weight";
+          copy = `<strong>Local gradient × what it carried.</strong> A weight's gradient is the error signal arriving at its destination multiplied by the value it scaled on the way forward.`;
+          if (state.phase < gradPhase) {
+            calculation = `Advance to ${PHASES[gradPhase]} to reveal this gradient.`;
+          } else {
+            calculation = `${signalLabel} × ${carriedLabel} = ${fmt(signal, 3)} × ${fmt(carried, 3)} = ${fmt(gradient, 3)} · update: ${fmt(weight)} − ${state.lr.toFixed(2)}×(${fmt(gradient, 3)}) = ${fmt(weight - state.lr * gradient, 3)}`;
+          }
+          rows.push([signalLabel, fmt(carried, 3), state.phase < gradPhase ? "—" : fmt(gradient, 3)]);
+        } else if (selection.layer === "input") {
+          const i = selection.index;
+          title = `input x${i + 1}`;
+          reading = state.phase < 5 ? fmt(state.x[i]) : `δx = ${fmt(values.dx[i], 3)}`;
+          meta = "hidden-state activation";
+          copy = `<strong>End of the chain.</strong> Inputs receive gradients too, though this teaching network only updates weights — in a language model the same signal continues into the embedding table.`;
+          calculation = state.phase < 5 ? "Advance to Hidden grads to reveal δx." : `δx = Σ δz·w = ${fmt(values.dx[i], 3)}`;
+          W1.forEach((row, j) => rows.push([`δz${j + 1}`, fmt(row[i]), state.phase < 5 ? "—" : fmt(values.dz[j] * row[i], 3)]));
+          rows.push(["δx", "", state.phase < 5 ? "—" : fmt(values.dx[i], 3)]);
+        } else if (selection.layer === "hidden") {
+          const j = selection.index;
+          const gateOpen = values.gate[j] === 1;
+          title = `hidden h${j + 1}`;
+          reading = state.phase < 3 ? `h = ${fmt(values.h[j])}` : state.phase === 3 ? `δh = ${fmt(values.dh[j], 3)}` : `δz = ${fmt(values.dz[j], 3)}`;
+          meta = gateOpen ? "ReLU neuron · gate open (z > 0)" : "ReLU neuron · gate shut (z ≤ 0)";
+          copy = `<strong>Two hops of the chain rule.</strong> Gradient arrives from the output layer as δh, then the ReLU gate decides how much of it reaches the pre-activation z — and the weights behind it.`;
+          if (state.phase < 3) calculation = "Advance to Output grads to reveal δh.";
+          else if (state.phase === 3) calculation = `δh = Σ δℓ·w = ${fmt(values.dh[j], 3)}`;
+          else calculation = `δz = δh × ${values.gate[j]} = ${fmt(values.dh[j], 3)} × ${values.gate[j]} = ${fmt(values.dz[j], 3)}`;
+          W2.forEach((row, k) => rows.push([`δℓ${k + 1}`, fmt(row[j]), state.phase < 3 ? "—" : fmt(values.dlogits[k] * row[j], 3)]));
+          rows.push(["δh", "", state.phase < 3 ? "—" : fmt(values.dh[j], 3)]);
+        } else {
+          const k = selection.index;
+          title = `token “${TOKENS[k]}”`;
+          reading = state.phase < 2 ? `p = ${(values.p[k] * 100).toFixed(1)}%` : `δℓ = ${fmt(values.dlogits[k], 3)}`;
+          meta = k === t ? "target · gradient pulls this logit up" : "candidate · gradient pushes this logit down";
+          copy = `<strong>The error signal.</strong> Softmax and cross-entropy combine into one clean rule: each logit's gradient is its probability minus its one-hot target.`;
+          calculation = state.phase < 2 ? "Advance to δ logits to reveal the error signal." : `δℓ${k + 1} = p − y = ${values.p[k].toFixed(3)} − ${k === t ? 1 : 0} = ${fmt(values.dlogits[k], 3)}`;
+          rows.push([`p${k + 1}`, "", values.p[k].toFixed(3)]);
+          rows.push([`y${k + 1}`, "", k === t ? "1.000" : "0.000"]);
+          rows.push(["δℓ", "", state.phase < 2 ? "—" : fmt(values.dlogits[k], 3)]);
+        }
+        $("#selection-title").textContent = title;
+        $("#selection-reading").textContent = reading;
+        $("#selection-meta").textContent = meta;
+        $("#selection-copy").innerHTML = copy;
+        $("#calculation").textContent = calculation;
+        $("#contrib-head").hidden = rows.length === 0;
+        $("#contributions").innerHTML = rows.map(([name, local, result]) => `<div class="contrib-row"><span>${name}</span><span>${local}</span><b>${result}</b></div>`).join("");
+      }
+
+      function renderStatus(values) {
+        const winner = TOKENS[values.p.indexOf(Math.max(...values.p))];
+        const messages = [
+          [`The forward pass has finished; “${winner}” leads the prediction.`, "Forward.", "Probabilities are ready — choose a target, then run the error backward."],
+          [`Cross-entropy scores the target “${TOKENS[state.target]}” at L = ${values.L.toFixed(3)}.`, "Loss.", "One number summarizes how wrong the prediction is."],
+          ["Each logit receives its error signal: probability minus one-hot target.", "Error signal.", "The target's logit is pulled up; every other logit is pushed down."],
+          ["Output-layer weights receive gradients; error signals reach the hidden layer.", "Output grads.", "Each amber wire carries ∂L/∂w for one weight."],
+          ["The ReLU gate passes gradient only where the pre-activation was positive.", "ReLU gate.", "A shut gate means zero gradient for every weight behind that neuron."],
+          ["Hidden-layer weights receive gradients; the chain is complete.", "Hidden grads.", "Every weight now has a direction — gradient descent takes it from here."]
+        ];
+        $("#status").textContent = messages[state.phase][0];
+        $("#status").classList.toggle("complete", state.phase === 5);
+        $("#caption-lead").textContent = messages[state.phase][1];
+        $("#caption-lead").nextSibling.textContent = ` ${messages[state.phase][2]}`;
+        $("#step").textContent = state.phase === 5 ? "Restart" : "Step";
+      }
+
+      document.addEventListener("keydown", event => {
+        if (event.key === "Tab") document.body.classList.add("keyboard-nav");
+      });
+      document.addEventListener("pointerdown", () => document.body.classList.remove("keyboard-nav"));
+
+      buildControls();
+      buildPhaseTrack();
+      buildDistribution();
+      buildNetwork();
+      render();
+    })();
+  </script>
+
+  <!-- BEGIN THIRD-PARTY CODE — keep this section last. -->
+  <!-- No third-party libraries on this page. -->
+  <!-- END THIRD-PARTY CODE -->
+</body>
+</html>
