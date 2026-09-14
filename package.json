@@ -1,0 +1,41 @@
+{
+  "name": "peek-llm",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build && node scripts/check-build.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint apps packages scripts/*.mjs vite.config.mjs",
+    "test": "node scripts/test.mjs",
+    "papers:download": "node packages/model-architectures/attention-atlas/scripts/download-papers.mjs",
+    "papers:check": "node packages/model-architectures/attention-atlas/scripts/download-papers.mjs --check",
+    "check": "pnpm check:html && pnpm check:source",
+    "check:html": "make check-html",
+    "check:source": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "dependencies": {
+    "@react-three/drei": "10.7.7",
+    "@react-three/fiber": "9.6.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.1",
+    "three": "0.177.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@types/three": "0.177.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0",
+    "vite": "6.4.3"
+  }
+}

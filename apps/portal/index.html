@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive visual explanations of language models. Explore Attention Atlas and see how the mechanisms connect.">
+  <meta name="peek:mode" content="source">
+  <title>Peek LLM — See how language models work</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' stroke='%237c4c1f' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='12' cy='12' r='5.5' fill='%237c4c1f'/%3E%3C/svg%3E">
+  <style>
+    html { background:#efece4; color:#2e2b25; font-family:system-ui,sans-serif; }
+    html[data-theme="dark"] { background:#0b141c; color:#e3ebe9; }
+    body { margin:0; }
+    .portal-boot { min-height:100svh; display:grid; place-content:center; gap:20px; padding:24px; box-sizing:border-box; text-align:center; }
+    .portal-boot h1 { margin:0; font:400 36px Georgia,serif; }
+    .portal-boot p { font-size:14px; line-height:1.7; }
+    .portal-boot a { color:inherit; padding:10px; }
+  </style>
+  <script>
+    document.documentElement.dataset.theme = '__PEEK_EXPERIENCE_PATHS__'.includes(window.location.pathname.replace(/\/$/, '')) ? 'dark' : 'light';
+    function reportStartup(message) {
+      var status = document.getElementById('portal-status');
+      if (status) status.textContent = message;
+    }
+    window.addEventListener('error', function(event) {
+      if (event.target && event.target.tagName === 'SCRIPT') reportStartup('The page could not load. Reload to try again.');
+    }, true);
+    window.setTimeout(function() { reportStartup('Still loading. You can wait or reload the page.'); }, 12000);
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div id="root"><div class="portal-boot"><h1>Peek LLM</h1><p id="portal-status" role="status">Opening the collection…</p><a href="">Reload</a><noscript><p>Enable JavaScript to explore the interactive exhibits.</p></noscript></div></div>
+  <script type="module" src="./src/main.tsx"></script>
+</body>
+</html>
