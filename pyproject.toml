@@ -8,3 +8,8 @@ dependencies = []
 [tool.uv]
 package = false
 required-version = ">=0.11.25"
+
+[dependency-groups]
+dev = [
+    "tiktoken==0.12.0",
+]

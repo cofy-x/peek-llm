@@ -16,6 +16,8 @@ test('startup theme follows registered routes under development and production b
     for (const [path, theme] of [
       ['/model-architectures/attention-atlas', 'dark'],
       ['/model-architectures/attention-atlas/', 'dark'],
+      ['/tokenization/token-workshop', 'light'],
+      ['/tokenization/token-workshop/', 'light'],
       ['/', 'light'],
       ['/Model-Architectures/Attention-Atlas', 'light'],
       ['/model-architectures/unknown', 'light'],

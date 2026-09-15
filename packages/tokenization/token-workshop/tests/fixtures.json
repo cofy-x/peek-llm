@@ -1,0 +1,19 @@
+[
+  {"text": "", "ids": [], "pieces": []},
+  {"text": "Hello, \u4e16\u754c! \ud83d\udc4b", "ids": [9906, 11, 220, 3574, 244, 98220, 0, 62904, 233], "pieces": ["Hello", ",", " \u4e16\u754c", "!", " \ud83d\udc4b"]},
+  {"text": "hello world", "ids": [15339, 1917], "pieces": ["hello", " world"]},
+  {"text": "hello  world", "ids": [15339, 220, 1917], "pieces": ["hello", " ", " world"]},
+  {"text": "\u4e2d\u6587", "ids": [16325, 17161], "pieces": ["\u4e2d\u6587"]},
+  {"text": "\u8bed\u8a00\u6a21\u578b\u5982\u4f55\u9605\u8bfb\u6587\u5b57\uff1f", "ids": [73981, 78244, 54872, 25287, 30624, 99849, 33443, 227, 58653, 88435, 11571], "pieces": ["\u8bed\u8a00\u6a21\u578b\u5982\u4f55\u9605\u8bfb\u6587\u5b57", "\uff1f"]},
+  {"text": "\ud83d\udc4b \ud83d\udc69\ud83c\udffd\u200d\ud83d\udcbb \ud83c\udde8\ud83c\uddf3 \u2764\ufe0f", "ids": [9468, 239, 233, 62904, 102, 9468, 237, 121, 378, 235, 93273, 119, 11410, 229, 101, 9468, 229, 111, 71570, 31643], "pieces": ["\ud83d\udc4b", " \ud83d\udc69\ud83c\udffd\u200d\ud83d\udcbb", " \ud83c\udde8\ud83c\uddf3", " \u2764\ufe0f"]},
+  {"text": "def greet(name):\n\tprint(\"Hello\", name)", "ids": [755, 41886, 3232, 997, 7045, 446, 9906, 498, 836, 8], "pieces": ["def", " greet", "(name", "):\n", "\tprint", "(\"", "Hello", "\",", " name", ")"]},
+  {"text": "\r\n\t  \n", "ids": [319, 39420], "pieces": ["\r\n\t  \n"]},
+  {"text": "WE'RE I'd they've it'\u017f", "ids": [12739, 95253, 358, 4265, 814, 3077, 433, 6, 129, 123], "pieces": ["WE", "'RE", " I", "'d", " they", "'ve", " it", "'\u017f"]},
+  {"text": "<|endoftext|>", "ids": [27, 91, 8862, 728, 428, 91, 29], "pieces": ["<|", "endoftext", "|>"]},
+  {"text": "e\u0301 \u00e9", "ids": [68, 54939, 4046], "pieces": ["e", "\u0301", " \u00e9"]},
+  {"text": "\u00a0\u0085\u2028\u2029\ufeff", "ids": [4194, 126, 227, 378, 101, 378, 102, 3305], "pieces": ["\u00a0\u0085\u2028", "\u2029", "\ufeff"]},
+  {"text": "aaaaaaaaaaaa", "ids": [70540, 29558], "pieces": ["aaaaaaaaaaaa"]},
+  {"text": "\u4e2d\u6587\u4e2d\u6587", "ids": [16325, 17161, 16325, 17161], "pieces": ["\u4e2d\u6587\u4e2d\u6587"]},
+  {"text": "1234567890", "ids": [4513, 10961, 16474, 15], "pieces": ["123", "456", "789", "0"]},
+  {"text": "\u0000\u0001\u007f", "ids": [188, 189, 221], "pieces": ["\u0000\u0001\u007f"]}
+]

@@ -20,6 +20,12 @@ test('budgets include shared, dynamic, and CSS assets exactly once', () => {
   assert.deepEqual([...assetClosure(manifest, 'entry')].sort(), ['a.css', 'a.js', 'detail.js', 'image.svg', 'shared.js']);
 });
 test('missing build imports fail', () => assert.throws(() => assetClosure({ entry: { file: 'a.js', imports: ['missing'] } }, 'entry')));
+test('an experience importing portal React does not include sibling lazy routes', () => {
+  const manifest = { home: { file: 'home.js', dynamicImports: ['a', 'b'] }, a: { file: 'a.js', imports: ['home'], dynamicImports: ['detail'] }, b: { file: 'b.js' }, detail: { file: 'detail.js' } };
+  const initialModules = new Set();
+  const initial = assetClosure(manifest, 'home', initialModules, false);
+  assert.deepEqual([...new Set([...initial, ...assetClosure(manifest, 'a', new Set(initialModules))])], ['home.js', 'a.js', 'detail.js']);
+});
 test('cyclic import graphs terminate', () => assert.equal(assetClosure({ a: { file: 'a.js', imports: ['b'] }, b: { file: 'b.js', imports: ['a'] } }, 'a').size, 2));
 test('runtime assets cannot escape the static site', () => {
   for (const path of ['../paper.pdf', '/absolute.js', 'https://cdn.example/lib.js', '//cdn.example/x', 'a\\b']) assert.throws(() => assetPath(path));

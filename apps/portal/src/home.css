@@ -205,27 +205,13 @@ a:hover {
   min-width:0;
 }
 
-.slides {
-  display:flex;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-  scrollbar-width:thin;
-  overscroll-behavior-x:contain;
-  gap:24px;
-}
-
-.slide {
-  flex:0 0 100%;
-  min-width:0;
-  scroll-snap-align:start;
-}
-
 .stage-heading {
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:12px;
   margin-bottom:20px;
+  flex-wrap:wrap;
 }
 
 .stage-heading .eyebrow {
@@ -238,16 +224,11 @@ a:hover {
   margin:0;
 }
 
-.edition {
-  font:10px var(--font-mono);
-  color:var(--muted);
-  white-space:nowrap;
-}
-
 .preview {
   display:block;
   position:relative;
-  background:#0b141c;
+  background:var(--bg);
+  border:1px solid var(--line);
   overflow:hidden;
 }
 
@@ -258,43 +239,12 @@ a:hover {
   aspect-ratio:760/510;
 }
 
-.preview-cta {
-  display:flex;
-  justify-content:space-between;
-  border-top:1px solid #23333d;
-  background:#0d1a22;
-  color:#c8e5dd;
-  padding:18px 24px;
-  font:10px var(--font-mono);
-  letter-spacing:1px;
-  text-transform:uppercase;
-}
-
-.preview:hover {
-  text-decoration:none;
-}
-
-.preview:hover .preview-cta {
-  background:#152a32;
-}
-
-.stage-caption {
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  font:9px var(--font-mono);
-  text-transform:uppercase;
-  letter-spacing:1px;
-  color:var(--muted);
-  margin-top:16px;
-}
-
 .gallery-controls {
   display:flex;
   gap:8px;
   flex-wrap:wrap;
   justify-content:flex-end;
-  margin-top:20px;
+  margin-left:auto;
 }
 
 .gallery-controls button {
@@ -305,8 +255,14 @@ a:hover {
   font:12px var(--font-mono);
 }
 
+.gallery-controls button:hover {
+  background:color-mix(in srgb, var(--accent) 9%, transparent);
+  border-color:var(--accent);
+}
+
 .gallery-controls button[aria-pressed=true] {
-  background:var(--ink);
+  background:var(--accent);
+  border-color:var(--accent);
   color:var(--bg);
 }
 
@@ -494,15 +450,6 @@ a:hover {
   .stage-heading .eyebrow {
     font-size:8px;
     letter-spacing:1px;
-  }
-  .preview-cta {
-    padding:14px 16px;
-    font-size:9px;
-  }
-  .stage-caption {
-    font-size:8px;
-    line-height:1.5;
-    letter-spacing:0;
   }
   .collection-heading {
     align-items:flex-start;

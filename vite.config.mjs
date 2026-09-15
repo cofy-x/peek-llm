@@ -10,7 +10,7 @@ export default defineConfig(async ({command,isPreview}) => {
   // Load the registry in Node without bundling its deferred TSX imports into Vite's config.
   const registryUrl = pathToFileURL(resolve(root, 'scripts/site.mjs')).href;
   const { experiences } = await import(registryUrl);
-  const startupPaths = experiences.map(({path}) => `${base.replace(/\/$/, '')}${path}`);
+  const startupPaths = experiences.filter(experience => experience.theme === 'dark').map(({path}) => `${base.replace(/\/$/, '')}${path}`);
   return {
     root: portalRoot,
     base,

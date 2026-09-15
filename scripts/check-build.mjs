@@ -19,7 +19,8 @@ export function assetClosure(manifest, key, visited = new Set(), includeDynamic 
 }
 export async function checkBuild() {
   const manifest = JSON.parse(await readFile(assetPath('.vite/manifest.json'), 'utf8'));
-  const initial = assetClosure(manifest, 'index.html', new Set(), false);
+  const initialModules = new Set();
+  const initial = assetClosure(manifest, 'index.html', initialModules, false);
   initial.add('index.html'); initial.add('THIRD-PARTY-NOTICES.txt');
   async function budget(label, files, limit) {
     let bytes = 0;
@@ -30,7 +31,7 @@ export async function checkBuild() {
   await budget('Portal initial load', initial, portalBudget);
   for (const experience of experiences) {
     const key = relative(portalRoot, resolve(root, experience.source));
-    const files = new Set([...initial, ...assetClosure(manifest, key)]);
+    const files = new Set([...initial, ...assetClosure(manifest, key, new Set(initialModules))]);
     await budget(experience.id, files, experience.maxBytes);
   }
   const html = await readFile(assetPath('index.html'), 'utf8');

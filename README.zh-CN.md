@@ -42,6 +42,7 @@ make preview
 | 案例 | 探索内容 | 文档 |
 | --- | --- | --- |
 | [Attention Atlas](https://cofy-x.github.io/peek-llm/model-architectures/attention-atlas) | 通过模块选择、机制动画和导览，理解原始 Transformer 与 DeepSeek V4.1 Flash | [案例指南](packages/model-architectures/attention-atlas/README.md) |
+| [Token Workshop](https://cofy-x.github.io/peek-llm/tokenization/token-workshop) | 输入文字、检查 UTF-8 字节、回放 BPE 合并并比较 token ID | [案例说明](packages/tokenization/token-workshop/README.md) |
 
 ## 许可证
 

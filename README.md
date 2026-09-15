@@ -42,6 +42,7 @@ Browse the [live collection](https://cofy-x.github.io/peek-llm/) for available e
 | Experience | Explore | Documentation |
 | --- | --- | --- |
 | [Attention Atlas](https://cofy-x.github.io/peek-llm/model-architectures/attention-atlas) | Original Transformer and DeepSeek V4.1 Flash through selectable modules, animated mechanisms, and a guided tour | [Guide](packages/model-architectures/attention-atlas/README.md) |
+| [Token Workshop](https://cofy-x.github.io/peek-llm/tokenization/token-workshop) | Encode your text, inspect UTF-8 bytes, replay BPE merges, and compare token IDs | [Guide](packages/tokenization/token-workshop/README.md) |
 
 ## License
 

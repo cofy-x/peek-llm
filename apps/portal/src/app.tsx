@@ -16,14 +16,14 @@ export function App() {
   const location = useLocation();
   const experience = EXPERIENCES.find(item => item.path === location.pathname.replace(/\/$/, ''));
   useLayoutEffect(() => {
-    document.documentElement.dataset.theme = experience ? 'dark' : 'light';
+    document.documentElement.dataset.theme = experience?.theme ?? 'light';
     document.title = experience ? `${experience.title} — Peek LLM` : 'Peek LLM — See how language models work';
   }, [experience]);
   useEffect(() => { window.scrollTo(0, 0); }, [location.pathname]);
   return <div className={experience ? 'experience-shell' : 'home-shell'}>
     {experience ? <nav className="peek-navigation" aria-label="Exhibit navigation">
       <Brand /><Link to="/">All exhibits</Link><span>{experience.title}</span>
-      <button onClick={() => (document.getElementById('credits') as HTMLDialogElement).showModal()}>Credits</button>
+      {experience.id === 'attention-atlas' && <button onClick={() => (document.getElementById('credits') as HTMLDialogElement).showModal()}>Credits</button>}
     </nav> : <header className="masthead"><Brand /><nav aria-label="Main"><Link to="/#exhibits">Exhibits</Link><a href="https://github.com/cofy-x/peek-llm">GitHub ↗</a></nav></header>}
     <main id="main" className={experience ? 'experience-main' : undefined}>
       <Routes>
@@ -32,6 +32,6 @@ export function App() {
         <Route path="*" element={<section className="route-status"><h1>Page not found.</h1><Link to="/">Browse the exhibits</Link></section>} />
       </Routes>
     </main>
-    {experience && <dialog id="credits" aria-labelledby="credits-title"><h2 id="credits-title">Sources and runtime licenses</h2><form method="dialog"><button>Close credits</button></form><p>Paper citations and scientific caveats are available in the explorer’s Sources panel.</p><a href={`${import.meta.env.BASE_URL}THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Complete third-party runtime notices</a><pre>{originLicense}</pre></dialog>}
+    {experience?.id === 'attention-atlas' && <dialog id="credits" aria-labelledby="credits-title"><h2 id="credits-title">Sources and runtime licenses</h2><form method="dialog"><button>Close credits</button></form><p>Sources, scope, and scientific caveats are available in each exhibit’s Sources section.</p><a href={`${import.meta.env.BASE_URL}THIRD-PARTY-NOTICES.txt`} target="_blank" rel="noreferrer">Complete third-party runtime notices</a>{experience.id === 'attention-atlas' && <pre>{originLicense}</pre>}</dialog>}
   </div>;
 }

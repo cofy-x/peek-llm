@@ -62,3 +62,10 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
  .peek-navigation > span { display:none; }
  .peek-navigation button { margin-left:auto; min-height:30px; }
 }
+
+:root[data-theme="light"] {
+  --accent-ink:var(--accent);
+  --line-strong:var(--line);
+}
+:root[data-theme="light"] .experience-shell { height:auto; min-height:100dvh; overflow:visible; }
+:root[data-theme="light"] .experience-main { display:block; overflow:visible; }

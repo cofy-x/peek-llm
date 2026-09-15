@@ -16,7 +16,7 @@ Start with the learner's question, primary interaction, observable outcome, and 
 
 Implement `packages/<topic>/<id>/src/entry.tsx` with a default component export. Keep its data, preview, tests, and README in the same package. `apps/portal/index.html` remains the only HTML entry; the Portal owns navigation, route themes, loading states, and error recovery.
 
-Register completed experiences in `apps/portal/src/experiences.mjs`, which supplies both the catalog and lazy routes. Include a unique id, explicit stable `/<topic>/<id>` path, display metadata, accessible preview, source path, lazy import, and justified runtime budget. Keep experience renderers out of the home page's imports. Restart the development server after changing the registry.
+Register completed experiences in `apps/portal/src/experiences.mjs`, which supplies both the catalog and lazy routes. Include a unique id, explicit stable `/<topic>/<id>` path, display metadata, an explicit `light` or `dark` theme, accessible preview, source path, lazy import, and justified runtime budget. The registry theme controls both startup paint and mounted route chrome. Keep experience renderers out of the home page's imports. Restart the development server after changing the registry.
 
 The Portal initial-load budget is 400 KB. Each experience budget includes the Portal and its complete runtime closure: JavaScript, CSS, assets, and license notices. `scripts/check-build.mjs` checks budgets and rejects unregistered output. Bundle runtime dependencies locally with full licenses in `THIRD-PARTY-NOTICES.txt`; the retained Fiber 9.6.1 license in `scripts/licenses/` needs review when upgrading.
 

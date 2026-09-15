@@ -10,6 +10,7 @@ export function validateRegistry(experiences) {
     if (!Number.isSafeInteger(experience.maxBytes) || experience.maxBytes < 1 || !experience.sizeReason?.trim()) throw new Error('Justified runtime budget required');
     for (const field of ['title', 'category', 'description', 'interaction', 'format', 'previewAlt']) if (!experience[field]?.trim()) throw new Error(`Missing ${field}`);
     if (typeof experience.load !== 'function') throw new Error('Lazy loader required');
+    if (!['light', 'dark'].includes(experience.theme)) throw new Error('Explicit light or dark theme required');
     ids.add(experience.id); paths.add(experience.path);
   }
   return experiences;

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="510" viewBox="0 0 760 510">
+  <title>From a sentence to the bytes inside a token</title>
+  <desc>Hello, 世界! 👋 contains nine cl100k_base tokens. The character 世 expands into UTF-8 bytes E4 B8 96, split into token 3574 and token 244.</desc>
+  <rect width="760" height="510" fill="#efece4"/>
+  <g fill="#716c5f" font-family="monospace" font-size="11" letter-spacing="1.5">
+    <text x="40" y="38">TOKEN WORKSHOP</text>
+    <text x="720" y="38" text-anchor="end">TEXT → TOKENS</text>
+  </g>
+  <path d="M40 54H720" stroke="#2e2b25" stroke-opacity=".16"/>
+  <text x="54" y="102" font-family="serif" font-size="27" fill="#2e2b25">A token isn’t a word.</text>
+  <text x="704" y="101" text-anchor="end" font-family="monospace" font-size="12" fill="#716c5f">9 tokens</text>
+  <!-- Color follows the exhibit's token ordinals. The space before the emoji shares token 8. -->
+  <g transform="translate(94 131)">
+    <g>
+      <rect width="132" height="62" rx="3" fill="#dce5d7"/>
+      <rect x="135" width="30" height="62" rx="3" fill="#e8ddcb"/>
+      <rect x="168" width="30" height="62" rx="3" fill="#dce3ea"/>
+      <path d="M201 0H249V62H201Z" fill="#e7dce4"/>
+      <path d="M249 0H273V62H249Z" fill="#e5e4cd"/>
+      <rect x="276" width="56" height="62" rx="3" fill="#dce5d7"/>
+      <rect x="335" width="30" height="62" rx="3" fill="#e8ddcb"/>
+      <rect x="368" width="30" height="62" rx="3" fill="#dce3ea"/>
+      <path d="M401 0H461V62H401Z" fill="#dce3ea"/>
+      <path d="M461 0H481V62H461Z" fill="#e7dce4"/>
+    </g>
+    <g font-family="monospace" font-size="38" fill="#2e2b25" text-anchor="middle">
+      <text x="66" y="44">Hello</text><text x="150" y="44">,</text><text x="183" y="44">·</text>
+      <text x="237" y="44">世</text><text x="304" y="44">界</text><text x="350" y="44">!</text><text x="383" y="44">·</text>
+      <text x="441" y="44" font-family="Apple Color Emoji,Segoe UI Emoji,sans-serif">👋</text>
+    </g>
+    <path d="M201 61H248M250 61H273" stroke="#7c4c1f" stroke-width="2"/>
+    <path d="M401 61H460M462 61H481" stroke="#716c5f" stroke-opacity=".5" stroke-width="2"/>
+  </g>
+  <!-- Expand the selected character in place; connectors preserve byte order. -->
+  <g fill="none" stroke="#7c4c1f" stroke-opacity=".55">
+    <path d="M331 204V231M331 231C331 258 302 258 302 284M331 231C331 258 394 258 394 284M331 231C331 258 486 258 486 284"/>
+  </g>
+  <circle cx="331" cy="231" r="3" fill="#7c4c1f"/>
+  <g font-family="monospace" font-size="11" fill="#716c5f" letter-spacing="1">
+    <text x="54" y="320">UTF-8 BYTES</text><text x="54" y="394">TOKEN IDs</text>
+  </g>
+  <g fill="#e7dce4"><rect x="260" y="284" width="84" height="62" rx="3"/><rect x="352" y="284" width="84" height="62" rx="3"/></g>
+  <rect x="444" y="284" width="84" height="62" rx="3" fill="#e5e4cd"/>
+  <g font-family="monospace" font-size="26" text-anchor="middle" fill="#2e2b25"><text x="302" y="324">E4</text><text x="394" y="324">B8</text><text x="486" y="324">96</text></g>
+  <path d="M262 367V359H434V367M446 367V359H526V367" fill="none" stroke="#7c4c1f"/>
+  <g font-family="monospace" font-size="16" text-anchor="middle" fill="#7c4c1f"><text x="348" y="396">3574</text><text x="486" y="396">244</text></g>
+  <path d="M40 438H720" stroke="#2e2b25" stroke-opacity=".16"/>
+  <text x="40" y="473" font-family="serif" font-size="18" font-style="italic" fill="#716c5f">One character. Three bytes. Two tokens.</text>
+  <text x="720" y="473" text-anchor="end" font-family="monospace" font-size="11" fill="#716c5f">CL100K_BASE</text>
+</svg>
